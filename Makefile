@@ -16,6 +16,7 @@ BIND_LEVELDB ?= 0
 BIND_ROCKSDB ?= 0
 BIND_LMDB ?= 0
 BIND_SQLITE ?= 0
+BIND_KVSSD ?= 0
 
 # Extra options
 DEBUG_BUILD ?=
@@ -59,6 +60,11 @@ endif
 ifeq ($(BIND_SQLITE), 1)
 	LDFLAGS += -lsqlite3
 	SOURCES += $(wildcard sqlite/*.cc)
+endif
+
+ifeq ($(BIND_KVSSD), 1)
+	LDFLAGS += -lkvssd
+	SOURCES += $(wildcard kvssd/*.cc)
 endif
 
 CXXFLAGS += -std=c++17 -Wall -pthread $(EXTRA_CXXFLAGS) -I./
