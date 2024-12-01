@@ -60,11 +60,6 @@ struct kvs_key
     void *key;
     uint16_t length;
 
-    ~kvs_key()
-    {
-        delete[] static_cast<char *>(key);
-    }
-
     bool operator==(const kvs_key &other) const
     {
         return length == other.length &&
@@ -102,11 +97,6 @@ struct kvs_value
     uint32_t length;            // value byte stream 버퍼의 크기 (단위: byte)
     uint32_t actual_value_size; // device에 저장된 value의 실제 크기 (단위: byte)
     uint32_t offset;            // [optional] device에 저장된 value의 offset (단위: byte)
-
-    ~kvs_value()
-    {
-        delete[] static_cast<char *>(value);
-    }
 };
 
 /**

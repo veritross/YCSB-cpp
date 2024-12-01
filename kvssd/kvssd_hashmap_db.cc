@@ -49,6 +49,12 @@ Hashmap_KVSSD::~Hashmap_KVSSD()
  */
 kvs_result Hashmap_KVSSD::Read(const kvs_key &key, kvs_value &value_out)
 {
+    auto it = db.find(key);
+    if (it == db.end())
+    {
+        return KVS_ERR_KS_NOT_EXIST;
+    }
+    value_out = it->second;
     return KVS_SUCCESS;
 }
 
@@ -60,6 +66,12 @@ kvs_result Hashmap_KVSSD::Read(const kvs_key &key, kvs_value &value_out)
  */
 kvs_result Hashmap_KVSSD::Insert(const kvs_key &key, const kvs_value &value)
 {
+    auto it = db.find(key);
+    if (it != db.end())
+    {
+        return KVS_ERR_KS_EXIST;
+    }
+    db.insert({key, value});
     return KVS_SUCCESS;
 }
 
@@ -71,6 +83,12 @@ kvs_result Hashmap_KVSSD::Insert(const kvs_key &key, const kvs_value &value)
  */
 kvs_result Hashmap_KVSSD::Update(const kvs_key &key, const kvs_value &value)
 {
+    auto it = db.find(key);
+    if (it == db.end())
+    {
+        return KVS_ERR_KS_NOT_EXIST;
+    }
+    it->second = value;
     return KVS_SUCCESS;
 }
 
@@ -81,6 +99,12 @@ kvs_result Hashmap_KVSSD::Update(const kvs_key &key, const kvs_value &value)
  */
 kvs_result Hashmap_KVSSD::Delete(const kvs_key &key)
 {
+    auto it = db.find(key);
+    if (it == db.end())
+    {
+        return KVS_ERR_KS_NOT_EXIST;
+    }
+    db.erase(key);
     return KVS_SUCCESS;
 }
 
