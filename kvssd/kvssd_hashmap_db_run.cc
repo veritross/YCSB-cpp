@@ -1,6 +1,43 @@
 #include "bits/stdc++.h"
 #include "kvssd_hashmap_db.h"
 
+#define debug(x) printf("%s\n", (x))
+
+/**
+ * @brief CreateRow()를 통해 할당된 스마트 포인터를 관리하는 Class
+ * 프로그램이 종료될 때 관리 중인 모든 스마트 포인터 Free
+ */
+class ManagedMemory
+{
+public:
+    // 관리 대상 스마트 포인터 추가
+    static void Add(std::unique_ptr<char[]> memory)
+    {
+        GetInstance().memoryList.push_back(std::move(memory));
+    }
+
+    // 소멸 시 모든 스마트 포인터 해제
+    ~ManagedMemory()
+    {
+        memoryList.clear();
+    }
+
+private:
+    std::vector<std::unique_ptr<char[]>> memoryList;
+
+    // instance 변수는 함수 최초 실행 시 한 번만 생성됨 (static, singletone)
+    static ManagedMemory &GetInstance()
+    {
+        static ManagedMemory instance;
+        return instance;
+    }
+
+    // 복사, 대입 연산자 삭제
+    ManagedMemory() = default;
+    ManagedMemory(const ManagedMemory &) = delete;
+    ManagedMemory &operator=(const ManagedMemory &) = delete;
+};
+
 /**
  * @brief key, value struct의 unique_ptr를 원소로 하는 구조체
  */
@@ -73,14 +110,58 @@ std::unique_ptr<kvs_row> CreateRow(const std::string &key_in, const std::vector<
     newRow->value = std::make_unique<kvs_value>();
     std::string value_sz;
     SerializeRow(value_in, &value_sz);
-    char *value_data = new char[value_sz.size()];
-    std::memcpy(value_data, value_sz.data(), value_sz.size());
-    newRow->value->value = static_cast<void *>(value_data);
+
+    // char *value_data = new char[value_sz.size()];
+    auto value_data = std::make_unique<char[]>(value_sz.size());
+    std::memcpy(value_data.get(), value_sz.data(), value_sz.size());
+    newRow->value->value = static_cast<void *>(value_data.get());
     newRow->value->length = value_sz.size();
     newRow->value->actual_value_size = value_sz.size();
     newRow->value->offset = 0;
 
+    ManagedMemory::Add(std::move(value_data));
+
     return newRow;
+}
+
+/**
+ * @brief kvs_value의 값을 출력하는 함수
+ * @param[in] value 출력할 kvs_value
+ */
+void PrintRow(const kvs_value &value)
+{
+    std::vector<Field> value_vec;
+    DeserializeRow(&value_vec, static_cast<char *>(value.value), value.length);
+    if (value_vec.size() == 0)
+    {
+        printf("The value has empty field.\n");
+        return;
+    }
+    printf("Name: Value\n");
+    for (auto const field : value_vec)
+    {
+        printf("%s: %s\n", field.name.data(), field.value.data());
+    }
+}
+
+/**
+ * @brief Field vector의 값을 출력하는 함수
+ * @param[in] value 출력할 std::vector<Field>
+ */
+void PrintFieldVector(const std::vector<Field> &value)
+{
+    printf("\n");
+    if (value.size() == 0)
+    {
+        printf("The value has empty field.\n");
+        return;
+    }
+    printf("Name: Value\n");
+    for (auto const field : value)
+    {
+        printf("%s: %s\n", field.name.data(), field.value.data());
+    }
+    printf("\n");
 }
 
 class Exception : public std::exception
@@ -109,7 +190,64 @@ void CheckAPI(kvs_result ret)
         // printf("kvssd error (errmsg: %s)\n", kvstrerror[ret]);
         throw Exception(std::string(kvstrerror[ret]));
     }
-    printf("%s\n", kvstrerror[ret]);
+    printf("...%s\n", kvstrerror[ret]);
+}
+
+/**
+ * @brief Read Wrapper 함수
+ *
+ * @param[in] kvssd kvssd db 인스턴스
+ * @param[in] key 검색할 key 값(string)
+ * @param[out] value 찾았을 시 반환받을 value 값(std::vector<Field>)
+ */
+void ReadRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key, std::vector<Field> &value)
+{
+    printf("Run Read...\n");
+    value = {};
+    std::unique_ptr<kvs_row> newRow = CreateRow(key, value);
+    CheckAPI(kvssd->Read(*newRow->key, *newRow->value));
+    DeserializeRow(&value, static_cast<char *>(newRow->value->value), newRow->value->length);
+}
+
+/**
+ * @brief Insert Wrapper 함수
+ *
+ * @param[in] kvssd kvssd db 인스턴스
+ * @param[in] key 추가할 key 값(string)
+ * @param[in] value 추가할 value 값(std::vector<Field>)
+ */
+void InsertRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key, const std::vector<Field> &value)
+{
+    printf("Run Insert...\n");
+    std::unique_ptr<kvs_row> newRow = CreateRow(key, value);
+    CheckAPI(kvssd->Insert(*newRow->key, *newRow->value));
+}
+
+/**
+ * @brief Update Wrapper 함수
+ *
+ * @param[in] kvssd kvssd db 인스턴스
+ * @param[in] key 찾을 key 값(string)
+ * @param[in] value 변경할 value 값(std::vector<Field>)
+ */
+void UpdateRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key, const std::vector<Field> &value)
+{
+    printf("Run Update...\n");
+    std::unique_ptr<kvs_row> newRow = CreateRow(key, value);
+    CheckAPI(kvssd->Update(*newRow->key, *newRow->value));
+}
+
+/**
+ * @brief Delete Wrapper 함수
+ *
+ * @param[in] kvssd kvssd db 인스턴스
+ * @param[in] key 찾을 key 값(string)
+ */
+void DeleteRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key)
+{
+    printf("Run Delete...\n");
+    std::unique_ptr<kvs_row> newRow = CreateRow(key, {});
+    CheckAPI(kvssd->Delete(*newRow->key));
 }
 
 int main(void)
@@ -122,13 +260,36 @@ int main(void)
     std::string key2 = "key2";
     std::vector<Field> value1 = {{"field1", "value1_1"}, {"field2", "value1_2"}};
     std::vector<Field> value2 = {{"field1", "value2_1"}, {"field2", "value2_2"}};
-    std::unique_ptr<kvs_row> row1 = CreateRow(key1, value1);
-    std::unique_ptr<kvs_row> row2 = CreateRow(key2, value2);
+    std::vector<Field> output_value;
 
-    CheckAPI(kvssd->Insert(*row1->key, *row1->value));
-    CheckAPI(kvssd->Read(*row1->key, *row1->value));
-    CheckAPI(kvssd->Update(*row1->key, *row1->value));
-    CheckAPI(kvssd->Delete(*row1->key));
+    // key1-value1, key2-value2 Insert
+    InsertRow(kvssd, key1, value1);
+    InsertRow(kvssd, key2, value2);
+
+    // Read key1, key2 순차적으로 수행
+    ReadRow(kvssd, key1, output_value);
+    PrintFieldVector(output_value);
+    ReadRow(kvssd, key2, output_value);
+    PrintFieldVector(output_value);
+
+    // key1의 value를 value2로 Update
+    UpdateRow(kvssd, key1, value2);
+
+    // Read key1, key2 순차적으로 수행
+    ReadRow(kvssd, key1, output_value);
+    PrintFieldVector(output_value);
+    ReadRow(kvssd, key2, output_value);
+    PrintFieldVector(output_value);
+
+    // key2에 해당하는 row Delete
+    DeleteRow(kvssd, key2);
+
+    // Read key1, key2 순차적으로 수행
+    ReadRow(kvssd, key1, output_value);
+    PrintFieldVector(output_value);
+    // key not found 에러 나는지 확인
+    ReadRow(kvssd, key2, output_value);
+    PrintFieldVector(output_value);
 
     printf("[Debug] Test ended\n");
     return 0;
