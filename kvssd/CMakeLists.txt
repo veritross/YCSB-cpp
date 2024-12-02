@@ -15,7 +15,7 @@ set(CompilerFlags
 
 set(TARGET_APP kvssd_test)
 set(SrcLib SrcLib)
-set(SrcFiles kvssd_hashmap_db_run.cc kvssd_hashmap_db.cc)
+set(SrcFiles kvssd_hashmap_db_impl.cc kvssd_hashmap_db.cc)
 
 add_library(${SrcLib} STATIC ${SrcFiles})
 target_include_directories(${SrcLib} PUBLIC ${CMAKE_SOURCE_DIR}/../)
