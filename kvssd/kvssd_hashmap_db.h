@@ -1,14 +1,10 @@
 #ifndef YCSB_C_KVSSD_HASHMAP_DB_H_
 #define YCSB_C_KVSSD_HASHMAP_DB_H_
 
-#include <unordered_map>
 #include <cstring>
+#include <cstdint>
+#include <unordered_map>
 
-#include <kvssd.h>
-
-/**
- * @brief kvssd API 함수의 반환 자료형
- */
 typedef enum
 {
     KVS_SUCCESS = 0,                          // Successful
@@ -38,23 +34,8 @@ typedef enum
     KVS_ERR_DEV_NOT_OPENED = 0x018,           // device was not opened yet
 } kvs_result;
 
-/**
- * @brief kvs_result을 Index, 대응되는 에러문을 Value로 갖는 배열
- */
-extern const char *kvstrerror[];
+extern const char *kvstrerror[]; // kvs_result을 Index, 대응되는 에러문을 Value로 갖는 배열
 
-/**
- * @brief DB row의 Value vector의 원소 타입
- */
-struct Field
-{
-    std::string name;
-    std::string value;
-};
-
-/**
- * @brief DB row의 key struct type
- */
 struct kvs_key
 {
     void *key;
@@ -88,9 +69,6 @@ struct std::hash<kvs_key>
     }
 };
 
-/**
- * @brief DB row의 value struct type
- */
 struct kvs_value
 {
     void *value;                // value byte stream 버퍼의 시작 주소
@@ -99,9 +77,6 @@ struct kvs_value
     uint32_t offset;            // [optional] device에 저장된 value의 offset (단위: byte)
 };
 
-/**
- * @brief KVSSD Interface
- */
 class KVSSD
 {
 public:
@@ -114,11 +89,6 @@ public:
     virtual kvs_result Delete(const kvs_key &) = 0;
 };
 
-/**
- * @brief Hashmap_KVSSD Class
- *
- * KVSSD Interface의 구현체
- */
 class Hashmap_KVSSD : public KVSSD
 {
 public:
@@ -134,10 +104,7 @@ private:
     std::unordered_map<kvs_key, kvs_value> db;
 };
 
-/**
- * @brief Hashmap_KVSSD 객체 생성 함수
- * @return KVSSD 타입의 Hashmap_KVSSD 객체
- */
+// Hashmap_KVSSD 객체 생성 함수
 KVSSD *NewKvssdDB();
 
 #endif // YCSB_C_KVSSD_HASHMAP_DB_H_

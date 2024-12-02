@@ -1,8 +1,7 @@
-#include <string>
-#include <mutex>
 #include "kvssd_hashmap_db.h"
 
-#include <kvssd.h>
+#include <mutex>
+#include <string>
 
 const char *kvstrerror[] = {
     "Successful",                           // KVS_SUCCESS
@@ -41,12 +40,7 @@ Hashmap_KVSSD::~Hashmap_KVSSD()
     // cleanup
 }
 
-/** @todo
- * @brief Read API 함수
- * @param[in] key 찾을 row의 key
- * @param[out] value_out 찾은 row의 value
- * @return kvs_result
- */
+// API 함수 4가지
 kvs_result Hashmap_KVSSD::Read(const kvs_key &key, kvs_value &value_out)
 {
     auto it = db.find(key);
@@ -58,12 +52,6 @@ kvs_result Hashmap_KVSSD::Read(const kvs_key &key, kvs_value &value_out)
     return KVS_SUCCESS;
 }
 
-/** @todo
- * @brief Insert API 함수
- * @param[in] key 추가할 row의 key
- * @param[in] value 추가할 row의 value
- * @return kvs_result
- */
 kvs_result Hashmap_KVSSD::Insert(const kvs_key &key, const kvs_value &value)
 {
     auto it = db.find(key);
@@ -75,12 +63,6 @@ kvs_result Hashmap_KVSSD::Insert(const kvs_key &key, const kvs_value &value)
     return KVS_SUCCESS;
 }
 
-/** @todo
- * @brief Update API 함수
- * @param[in] key 검색 및 변경할 row의 key
- * @param[in] value 검색 및 변경할 row의 value
- * @return kvs_result
- */
 kvs_result Hashmap_KVSSD::Update(const kvs_key &key, const kvs_value &value)
 {
     auto it = db.find(key);
@@ -92,11 +74,6 @@ kvs_result Hashmap_KVSSD::Update(const kvs_key &key, const kvs_value &value)
     return KVS_SUCCESS;
 }
 
-/** @todo
- * @brief Delete API 함수
- * @param[in] key 삭제할 row의 key
- * @return kvs_result
- */
 kvs_result Hashmap_KVSSD::Delete(const kvs_key &key)
 {
     auto it = db.find(key);
