@@ -8,3 +8,6 @@ tags
 compile_commands.json
 .clangd/
 .cache/
+
+build
+googletest-1.15.2
