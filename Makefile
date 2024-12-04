@@ -63,7 +63,6 @@ ifeq ($(BIND_SQLITE), 1)
 endif
 
 ifeq ($(BIND_KVSSD), 1)
-#	LDFLAGS += -lkvssd
 	SOURCES += $(wildcard kvssd/*.cc)
 endif
 
