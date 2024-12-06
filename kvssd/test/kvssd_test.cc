@@ -50,7 +50,7 @@ namespace ycsbc
 
         std::vector<DB::Field> output_value;
 
-        std::unique_ptr<KVSSD> kvssd(NewKvssdDB());
+        std::unique_ptr<KVSSD> kvssd(new Hashmap_KVSSD());
 
         bool FieldVectorCmp(std::vector<DB::Field> &value1, std::vector<DB::Field> &value2)
         {

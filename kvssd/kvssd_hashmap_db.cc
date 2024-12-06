@@ -84,8 +84,3 @@ kvs_result Hashmap_KVSSD::Delete(const kvs_key &key)
     db.erase(key);
     return KVS_SUCCESS;
 }
-
-KVSSD *NewKvssdDB()
-{
-    return new Hashmap_KVSSD;
-}

@@ -104,7 +104,4 @@ private:
     std::unordered_map<kvs_key, kvs_value> db;
 };
 
-// Hashmap_KVSSD 객체 생성 함수
-KVSSD *NewKvssdDB();
-
 #endif // YCSB_C_KVSSD_HASHMAP_DB_H_
