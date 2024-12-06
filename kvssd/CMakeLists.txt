@@ -18,9 +18,11 @@ set(SrcLib SrcLib)
 set(SrcFiles kvssd_hashmap_db_impl.cc kvssd_hashmap_db.cc)
 
 add_library(${SrcLib} STATIC ${SrcFiles})
+target_include_directories(${SrcLib} PUBLIC ${CMAKE_SOURCE_DIR})
 target_include_directories(${SrcLib} PUBLIC ${CMAKE_SOURCE_DIR}/../)
 add_subdirectory(googletest-1.15.2)
 add_executable(${TARGET_APP} test/kvssd_test.cc)
+target_include_directories(${TARGET_APP} PUBLIC ${CMAKE_SOURCE_DIR})
 target_include_directories(${TARGET_APP} PUBLIC ${CMAKE_SOURCE_DIR}/../)
 target_link_libraries(${TARGET_APP} gtest_main ${SrcLib})
 

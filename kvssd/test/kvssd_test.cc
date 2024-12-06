@@ -1,228 +1,232 @@
 #include "gtest/gtest.h"
-#include "../kvssd_hashmap_db_impl.h"
+#include "kvssd_hashmap_db_impl.h"
 
 #include <ctime>
 #include <string>
 
-#define NUM_KEYS 1000
-#define NUM_VALUES 1000
+#define NUM_KEYS 100000
+#define NUM_VALUES 100000
 
-namespace ycsbc
+namespace
 {
-    namespace
+    class KvssdHashMapDbImplTest : public ::testing::Test
     {
-
-        std::string RandomPrintStr(size_t length)
+    protected:
+        void SetUp() override
         {
-
-            std::string randomString;
-            randomString.reserve(length);
-            for (size_t i = 0; i < length; ++i)
-            {
-                randomString += utils::RandomPrintChar();
-            }
-            return randomString;
+            kvssd.reset(new Hashmap_KVSSD());
         }
 
-        std::vector<std::string> key = []
+        std::unique_ptr<KVSSD> kvssd;
+        std::vector<ycsbc::DB::Field> output_value;
+    };
+
+    std::string RandomPrintStr(size_t length)
+    {
+
+        std::string randomString;
+        randomString.reserve(length);
+        for (size_t i = 0; i < length; ++i)
         {
-            std::vector<std::string> keys(NUM_KEYS);
-            for (size_t i = 0; i < NUM_KEYS; i++)
-            {
-                keys[i] = "key" + std::to_string(i);
-            }
-            return keys;
-        }();
+            randomString += ycsbc::utils::RandomPrintChar();
+        }
+        return randomString;
+    }
 
-        std::vector<std::vector<DB::Field>> value = []
+    std::vector<std::string> key = []
+    {
+        std::vector<std::string> keys(NUM_KEYS);
+        for (size_t i = 0; i < NUM_KEYS; i++)
         {
-            srand(static_cast<unsigned>(time(0)));
-            std::vector<std::vector<DB::Field>> values(NUM_VALUES);
-            for (size_t i = 0; i < NUM_VALUES; i++)
-            {
-                values[i] = {
-                    {"field" + std::to_string(i) + "_1", "value" + std::to_string(i) + RandomPrintStr(32)},
-                    {"field" + std::to_string(i) + "_2", "value" + std::to_string(i) + RandomPrintStr(32)},
-                    {"field" + std::to_string(i) + "_3", "value" + std::to_string(i) + RandomPrintStr(32)}};
-            }
-            return values;
-        }();
+            keys[i] = "key" + std::to_string(i);
+        }
+        return keys;
+    }();
 
-        std::vector<DB::Field> output_value;
-
-        std::unique_ptr<KVSSD> kvssd(new Hashmap_KVSSD());
-
-        bool FieldVectorCmp(std::vector<DB::Field> &value1, std::vector<DB::Field> &value2)
+    std::vector<std::vector<ycsbc::DB::Field>> value = []
+    {
+        srand(static_cast<unsigned>(time(0)));
+        std::vector<std::vector<ycsbc::DB::Field>> values(NUM_VALUES);
+        for (size_t i = 0; i < NUM_VALUES; i++)
         {
-            size_t len1 = value1.size();
-            size_t len2 = value2.size();
-            if (len1 != len2)
+            values[i] = {
+                {"field" + std::to_string(i) + "_1", "value" + std::to_string(i) + RandomPrintStr(32)},
+                {"field" + std::to_string(i) + "_2", "value" + std::to_string(i) + RandomPrintStr(32)},
+                {"field" + std::to_string(i) + "_3", "value" + std::to_string(i) + RandomPrintStr(32)}};
+        }
+        return values;
+    }();
+
+
+    bool FieldVectorCmp(std::vector<ycsbc::DB::Field> &value1, std::vector<ycsbc::DB::Field> &value2)
+    {
+        size_t len1 = value1.size();
+        size_t len2 = value2.size();
+        if (len1 != len2)
+        {
+            return true;
+        }
+        for (size_t i = 0; i < len1; i++)
+        {
+            if (value1[i].name != value2[i].name)
             {
                 return true;
             }
-            for (size_t i = 0; i < len1; i++)
+            if (value1[i].value != value2[i].value)
             {
-                if (value1[i].name != value2[i].name)
-                {
-                    return true;
-                }
-                if (value1[i].value != value2[i].value)
-                {
-                    return true;
-                }
+                return true;
             }
-            return false;
         }
-    } // namespace anonymous
+        return false;
+    }
 
-    TEST(KvssdHashMapDbImplTest, ReadSmall)
+    TEST_F(KvssdHashMapDbImplTest, ReadSmall)
     {
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
         }
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(ReadRow(kvssd, key[i], output_value));
+            EXPECT_NO_THROW(ycsbc::ReadRow(kvssd, key[i], output_value));
             EXPECT_FALSE(FieldVectorCmp(value[i], output_value));
         }
     }
 
-    TEST(KvssdHashMapDbImplTest, ReadLarge)
+    TEST_F(KvssdHashMapDbImplTest, ReadLarge)
     {
-        for (size_t i = 0; i < 1000; i++)
+        for (size_t i = 0; i < 100'000; i++)
         {
-            EXPECT_NO_THROW(InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
         }
-        for (size_t i = 0; i < 1000; i++)
+        for (size_t i = 0; i < 100'000; i++)
         {
-            EXPECT_NO_THROW(ReadRow(kvssd, key[i], output_value));
+            EXPECT_NO_THROW(ycsbc::ReadRow(kvssd, key[i], output_value));
             EXPECT_FALSE(FieldVectorCmp(value[i], output_value));
         }
     }
 
-    TEST(KvssdHashMapDbImplTest, Reinsertion)
+    TEST_F(KvssdHashMapDbImplTest, Reinsertion)
     {
-        EXPECT_NO_THROW(InsertRow(kvssd, key[0], value[0]));
-        EXPECT_NO_THROW(InsertRow(kvssd, key[1], value[1]));
+        EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[0], value[0]));
+        EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[1], value[1]));
         EXPECT_THROW({
         try
         {
-            InsertRow(kvssd, key[0], value[2]);
+            ycsbc::InsertRow(kvssd, key[0], value[2]);
         }
-        catch( const utils::Exception& e )
+        catch( const ycsbc::utils::Exception& e )
         {
             EXPECT_STREQ( "Key space is already created", e.what() );
             throw;
-        } }, utils::Exception);
+        } }, ycsbc::utils::Exception);
         EXPECT_THROW({
         try
         {
-            InsertRow(kvssd, key[1], value[3]);
+            ycsbc::InsertRow(kvssd, key[1], value[3]);
         }
-        catch( const utils::Exception& e )
+        catch( const ycsbc::utils::Exception& e )
         {
             EXPECT_STREQ( "Key space is already created", e.what() );
             throw;
-        } }, utils::Exception);
+        } }, ycsbc::utils::Exception);
     }
 
-    TEST(KvssdHashMapDbImplTest, UpdateSmall)
+    TEST_F(KvssdHashMapDbImplTest, UpdateSmall)
     {
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
         }
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(UpdateRow(kvssd, key[i], value[i + 10]));
+            EXPECT_NO_THROW(ycsbc::UpdateRow(kvssd, key[i], value[i + 10]));
         }
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(ReadRow(kvssd, key[i], output_value));
+            EXPECT_NO_THROW(ycsbc::ReadRow(kvssd, key[i], output_value));
             EXPECT_FALSE(FieldVectorCmp(value[i + 10], output_value));
         }
     }
 
-    TEST(KvssdHashMapDbImplTest, UpdateLarge)
+    TEST_F(KvssdHashMapDbImplTest, UpdateLarge)
     {
-        for (size_t i = 0; i < 1000; i++)
+        for (size_t i = 0; i < 100'000; i++)
         {
-            EXPECT_NO_THROW(InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
         }
-        for (size_t i = 0; i < 1000; i++)
+        for (size_t i = 0; i < 100'000; i++)
         {
-            EXPECT_NO_THROW(UpdateRow(kvssd, key[i], value[(i + 500) % 1000]));
+            EXPECT_NO_THROW(ycsbc::UpdateRow(kvssd, key[i], value[(i + 500) % 100'000]));
         }
-        for (size_t i = 0; i < 1000; i++)
+        for (size_t i = 0; i < 100'000; i++)
         {
-            EXPECT_NO_THROW(ReadRow(kvssd, key[i], output_value));
-            EXPECT_FALSE(FieldVectorCmp(value[(i + 500) % 1000], output_value));
+            EXPECT_NO_THROW(ycsbc::ReadRow(kvssd, key[i], output_value));
+            EXPECT_FALSE(FieldVectorCmp(value[(i + 500) % 100'000], output_value));
         }
     }
 
-    TEST(KvssdHashMapDbImplTest, UpdateAccessInvalidKey)
+    TEST_F(KvssdHashMapDbImplTest, UpdateAccessInvalidKey)
     {
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
         }
         EXPECT_THROW({
         try
         {
-            UpdateRow(kvssd, key[99], value[99]);
+            ycsbc::UpdateRow(kvssd, key[99], value[99]);
         }
-        catch( const utils::Exception& e )
+        catch( const ycsbc::utils::Exception& e )
         {
             EXPECT_STREQ( "Key space does not exist", e.what() );
             throw;
-        } }, utils::Exception);
+        } }, ycsbc::utils::Exception);
     }
 
-    TEST(KvssdHashMapDbImplTest, DeleteSmall)
+    TEST_F(KvssdHashMapDbImplTest, DeleteSmall)
     {
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
         }
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(ReadRow(kvssd, key[i], output_value));
+            EXPECT_NO_THROW(ycsbc::ReadRow(kvssd, key[i], output_value));
             EXPECT_FALSE(FieldVectorCmp(value[i], output_value));
-            EXPECT_NO_THROW(DeleteRow(kvssd, key[i]));
+            EXPECT_NO_THROW(ycsbc::DeleteRow(kvssd, key[i]));
         }
     }
 
-    TEST(KvssdHashMapDbImplTest, DeleteLarge)
+    TEST_F(KvssdHashMapDbImplTest, DeleteLarge)
     {
-        for (size_t i = 0; i < 1000; i++)
+        for (size_t i = 0; i < 100'000; i++)
         {
-            EXPECT_NO_THROW(InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
         }
-        for (size_t i = 0; i < 1000; i++)
+        for (size_t i = 0; i < 100'000; i++)
         {
-            EXPECT_NO_THROW(ReadRow(kvssd, key[i], output_value));
+            EXPECT_NO_THROW(ycsbc::ReadRow(kvssd, key[i], output_value));
             EXPECT_FALSE(FieldVectorCmp(value[i], output_value));
-            EXPECT_NO_THROW(DeleteRow(kvssd, key[i]));
+            EXPECT_NO_THROW(ycsbc::DeleteRow(kvssd, key[i]));
         }
     }
 
-    TEST(KvssdHashMapDbImplTest, DeleteAccessInvalidKey)
+    TEST_F(KvssdHashMapDbImplTest, DeleteAccessInvalidKey)
     {
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
         }
         EXPECT_THROW({
         try
         {
-            DeleteRow(kvssd, key[99]);
+            ycsbc::DeleteRow(kvssd, key[99]);
         }
-        catch( const utils::Exception& e )
+        catch( const ycsbc::utils::Exception& e )
         {
             EXPECT_STREQ( "Key space does not exist", e.what() );
             throw;
-        } }, utils::Exception);
+        } }, ycsbc::utils::Exception);
     }
-
-} // namespace ycsbc
+} // anonymous namespace

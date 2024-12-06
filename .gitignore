@@ -11,3 +11,4 @@ compile_commands.json
 
 build
 googletest-1.15.2
+.vscode/
