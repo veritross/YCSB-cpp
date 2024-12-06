@@ -57,7 +57,6 @@ namespace
         return values;
     }();
 
-
     bool FieldVectorCmp(std::vector<ycsbc::DB::Field> &value1, std::vector<ycsbc::DB::Field> &value2)
     {
         size_t len1 = value1.size();
