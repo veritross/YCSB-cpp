@@ -40,9 +40,36 @@ Hashmap_KVSSD::~Hashmap_KVSSD()
     // cleanup
 }
 
+
+kvs_result Hashmap_KVSSD::ValidateRequest(const kvs_key &key, std::optional<std::reference_wrapper<const kvs_value>> value)
+{
+    if(key.length < KVS_MIN_KEY_LENGTH || KVS_MAX_KEY_LENGTH < key.length){
+        return KVS_ERR_KEY_LENGTH_INVALID;
+    }
+    if(key.key == NULL){
+        return KVS_ERR_PARAM_INVALID;
+    }
+    if(value){
+        if(value->get().length < KVS_MIN_VALUE_LENGTH || KVS_MAX_VALUE_LENGTH < value->get().length){
+            return KVS_ERR_KEY_LENGTH_INVALID;
+        }
+        if(value->get().offset & (KVS_ALIGNMENT_UNIT - 1)){
+            return KVS_ERR_VALUE_OFFSET_MISALIGNED;
+        }
+        if(value->get().value == NULL && value->get().length){
+            return KVS_ERR_PARAM_INVALID;
+        }
+    }
+    return KVS_SUCCESS;
+}
+
 // API 함수 4가지
 kvs_result Hashmap_KVSSD::Read(const kvs_key &key, kvs_value &value_out)
 {
+    kvs_result ret = ValidateRequest(key, value_out);
+    if(ret!=KVS_SUCCESS){
+        return ret;
+    }
     rwl.lock_read();
     auto it = db.find(key);
     rwl.unlock_read();
@@ -56,6 +83,10 @@ kvs_result Hashmap_KVSSD::Read(const kvs_key &key, kvs_value &value_out)
 
 kvs_result Hashmap_KVSSD::Insert(const kvs_key &key, const kvs_value &value)
 {
+    kvs_result ret = ValidateRequest(key, value);
+    if(ret!=KVS_SUCCESS){
+        return ret;
+    }
     rwl.lock_write();
     auto it = db.find(key);
     if (it != db.end())
@@ -70,6 +101,10 @@ kvs_result Hashmap_KVSSD::Insert(const kvs_key &key, const kvs_value &value)
 
 kvs_result Hashmap_KVSSD::Update(const kvs_key &key, const kvs_value &value)
 {
+    kvs_result ret = ValidateRequest(key, value);
+    if(ret!=KVS_SUCCESS){
+        return ret;
+    }
     rwl.lock_write();
     auto it = db.find(key);
     if (it == db.end())
@@ -84,6 +119,10 @@ kvs_result Hashmap_KVSSD::Update(const kvs_key &key, const kvs_value &value)
 
 kvs_result Hashmap_KVSSD::Delete(const kvs_key &key)
 {
+    kvs_result ret = ValidateRequest(key, std::nullopt);
+    if(ret!=KVS_SUCCESS){
+        return ret;
+    }
     rwl.lock_write();
     auto it = db.find(key);
     if (it == db.end())
