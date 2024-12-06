@@ -113,9 +113,9 @@ namespace ycsbc
 
     void CheckAPI(kvs_result ret)
     {
-        if (ret != KVS_SUCCESS)
+        if (ret != kvs_result::KVS_SUCCESS)
         {
-            throw utils::Exception(std::string(kvstrerror[ret]));
+            throw utils::Exception(std::string(kvstrerror[static_cast<int>(ret)]));
         }
     }
 

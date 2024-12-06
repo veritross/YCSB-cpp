@@ -8,7 +8,7 @@
 #include <optional>
 #include <unordered_map>
 
-typedef enum
+enum class kvs_result
 {
     KVS_SUCCESS = 0,                          // Successful
     KVS_ERR_BUFFER_SMALL = 0x001,             // buffer space is not enough
@@ -35,7 +35,7 @@ typedef enum
     KVS_ERR_VALUE_OFFSET_MISALIGNED = 0x016,  // offset of value is required to be aligned to KVS_ALIGNMENT_UNIT
     KVS_ERR_VALUE_UPDATE_NOT_ALLOWED = 0x017, // key exists but value update is not allowed
     KVS_ERR_DEV_NOT_OPENED = 0x018,           // device was not opened yet
-} kvs_result;
+};
 
 extern const char *kvstrerror[]; // kvs_result을 Index, 대응되는 에러문을 Value로 갖는 배열
 

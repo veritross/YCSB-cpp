@@ -44,30 +44,30 @@ Hashmap_KVSSD::~Hashmap_KVSSD()
 kvs_result Hashmap_KVSSD::ValidateRequest(const kvs_key &key, std::optional<std::reference_wrapper<const kvs_value>> value)
 {
     if(key.length < KVS_MIN_KEY_LENGTH || KVS_MAX_KEY_LENGTH < key.length){
-        return KVS_ERR_KEY_LENGTH_INVALID;
+        return kvs_result::KVS_ERR_KEY_LENGTH_INVALID;
     }
     if(key.key == NULL){
-        return KVS_ERR_PARAM_INVALID;
+        return kvs_result::KVS_ERR_PARAM_INVALID;
     }
     if(value){
         if(value->get().length < KVS_MIN_VALUE_LENGTH || KVS_MAX_VALUE_LENGTH < value->get().length){
-            return KVS_ERR_KEY_LENGTH_INVALID;
+            return kvs_result::KVS_ERR_KEY_LENGTH_INVALID;
         }
         if(value->get().offset & (KVS_ALIGNMENT_UNIT - 1)){
-            return KVS_ERR_VALUE_OFFSET_MISALIGNED;
+            return kvs_result::KVS_ERR_VALUE_OFFSET_MISALIGNED;
         }
         if(value->get().value == NULL && value->get().length){
-            return KVS_ERR_PARAM_INVALID;
+            return kvs_result::KVS_ERR_PARAM_INVALID;
         }
     }
-    return KVS_SUCCESS;
+    return kvs_result::KVS_SUCCESS;
 }
 
 // API 함수 4가지
 kvs_result Hashmap_KVSSD::Read(const kvs_key &key, kvs_value &value_out)
 {
     kvs_result ret = ValidateRequest(key, value_out);
-    if(ret!=KVS_SUCCESS){
+    if(ret!=kvs_result::KVS_SUCCESS){
         return ret;
     }
     rwl.lock_read();
@@ -75,16 +75,16 @@ kvs_result Hashmap_KVSSD::Read(const kvs_key &key, kvs_value &value_out)
     rwl.unlock_read();
     if (it == db.end())
     {
-        return KVS_ERR_KS_NOT_EXIST;
+        return kvs_result::KVS_ERR_KS_NOT_EXIST;
     }
     value_out = it->second;
-    return KVS_SUCCESS;
+    return kvs_result::KVS_SUCCESS;
 }
 
 kvs_result Hashmap_KVSSD::Insert(const kvs_key &key, const kvs_value &value)
 {
     kvs_result ret = ValidateRequest(key, value);
-    if(ret!=KVS_SUCCESS){
+    if(ret!=kvs_result::KVS_SUCCESS){
         return ret;
     }
     rwl.lock_write();
@@ -92,17 +92,17 @@ kvs_result Hashmap_KVSSD::Insert(const kvs_key &key, const kvs_value &value)
     if (it != db.end())
     {
         rwl.unlock_write();
-        return KVS_ERR_KS_EXIST;
+        return kvs_result::KVS_ERR_KS_EXIST;
     }
     db.insert({key, value});
     rwl.unlock_write();
-    return KVS_SUCCESS;
+    return kvs_result::KVS_SUCCESS;
 }
 
 kvs_result Hashmap_KVSSD::Update(const kvs_key &key, const kvs_value &value)
 {
     kvs_result ret = ValidateRequest(key, value);
-    if(ret!=KVS_SUCCESS){
+    if(ret!=kvs_result::KVS_SUCCESS){
         return ret;
     }
     rwl.lock_write();
@@ -110,17 +110,17 @@ kvs_result Hashmap_KVSSD::Update(const kvs_key &key, const kvs_value &value)
     if (it == db.end())
     {
         rwl.unlock_write();
-        return KVS_ERR_KS_NOT_EXIST;
+        return kvs_result::KVS_ERR_KS_NOT_EXIST;
     }
     it->second = value;
     rwl.unlock_write();
-    return KVS_SUCCESS;
+    return kvs_result::KVS_SUCCESS;
 }
 
 kvs_result Hashmap_KVSSD::Delete(const kvs_key &key)
 {
     kvs_result ret = ValidateRequest(key, std::nullopt);
-    if(ret!=KVS_SUCCESS){
+    if(ret!=kvs_result::KVS_SUCCESS){
         return ret;
     }
     rwl.lock_write();
@@ -128,9 +128,9 @@ kvs_result Hashmap_KVSSD::Delete(const kvs_key &key)
     if (it == db.end())
     {
         rwl.unlock_write();
-        return KVS_ERR_KS_NOT_EXIST;
+        return kvs_result::KVS_ERR_KS_NOT_EXIST;
     }
     db.erase(key);
     rwl.unlock_write();
-    return KVS_SUCCESS;
+    return kvs_result::KVS_SUCCESS;
 }
