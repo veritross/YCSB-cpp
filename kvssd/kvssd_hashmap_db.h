@@ -1,6 +1,7 @@
 #ifndef YCSB_C_KVSSD_HASHMAP_DB_H_
 #define YCSB_C_KVSSD_HASHMAP_DB_H_
 
+#include "ReadersWriterLock.h"
 #include <cstring>
 #include <cstdint>
 #include <unordered_map>
@@ -102,6 +103,7 @@ public:
 
 private:
     std::unordered_map<kvs_key, kvs_value> db;
+    ReadersWriterLock rwl;
 };
 
 #endif // YCSB_C_KVSSD_HASHMAP_DB_H_
