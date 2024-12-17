@@ -5,6 +5,7 @@
 #include "kvssd_hashmap_db.h"
 #include "utils/utils.h"
 
+#include <mutex>
 #include <memory>
 
 namespace kvssd_hashmap
@@ -19,6 +20,10 @@ namespace kvssd_hashmap
         // 관리 대상 스마트 포인터 추가
         static void Add(std::unique_ptr<char[]> memory)
         {
+            static std::once_flag flag;
+            std::call_once(flag, []() { GetInstance(); });
+
+            std::lock_guard<std::mutex> lock(GetInstance().mtx);
             GetInstance().memoryList.push_back(std::move(memory));
         }
 
@@ -29,6 +34,7 @@ namespace kvssd_hashmap
         }
 
     private:
+        std::mutex mtx;
         std::vector<std::unique_ptr<char[]>> memoryList;
 
         // instance 변수는 함수 최초 실행 시 한 번만 생성됨 (static, singletone)

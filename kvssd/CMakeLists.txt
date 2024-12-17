@@ -12,7 +12,10 @@ set(CompilerFlags
         CMAKE_C_FLAGS_DEBUG
         CMAKE_C_FLAGS_RELEASE
         )
-
+        
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread -g")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=thread -g")
+        
 set(TARGET_APP kvssd_test)
 set(SrcLib SrcLib)
 set(SrcFiles kvssd_hashmap_db_impl.cc kvssd_hashmap_db.cc)
