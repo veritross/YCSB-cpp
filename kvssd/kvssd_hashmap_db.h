@@ -1,12 +1,13 @@
 #ifndef YCSB_C_KVSSD_HASHMAP_DB_H_
 #define YCSB_C_KVSSD_HASHMAP_DB_H_
 
-#include "ReadersWriterLock.h"
 #include "kvssd_const.h"
 #include <cstring>
 #include <cstdint>
 #include <optional>
+#include <pthread.h>
 #include <unordered_map>
+#include <condition_variable>
 
 namespace kvssd_hashmap
 {
@@ -115,7 +116,7 @@ namespace kvssd_hashmap
 
     private:
         std::unordered_map<kvs_key, kvs_value> db;
-        ReadersWriterLock rwl;
+        pthread_rwlock_t rwl;
 
         kvs_result ValidateRequest(const kvs_key &, std::optional<std::reference_wrapper<const kvs_value>>);
     };

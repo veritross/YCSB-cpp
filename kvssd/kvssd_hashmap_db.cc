@@ -1,6 +1,5 @@
 #include "kvssd_hashmap_db.h"
 
-#include <mutex>
 #include <string>
 
 namespace kvssd_hashmap
@@ -36,11 +35,11 @@ namespace kvssd_hashmap
 
     Hashmap_KVSSD::Hashmap_KVSSD()
     {
-        // initialize
+        pthread_rwlock_init(&rwl, NULL);
     }
     Hashmap_KVSSD::~Hashmap_KVSSD()
     {
-        // cleanup
+        pthread_rwlock_destroy(&rwl);
     }
 
     kvs_result Hashmap_KVSSD::ValidateRequest(const kvs_key &key, std::optional<std::reference_wrapper<const kvs_value>> value)
@@ -79,9 +78,9 @@ namespace kvssd_hashmap
         {
             return ret;
         }
-        rwl.lock_read();
+        pthread_rwlock_rdlock(&rwl);
         auto it = db.find(key);
-        rwl.unlock_read();
+        pthread_rwlock_unlock(&rwl);
         if (it == db.end())
         {
             return kvs_result::KVS_ERR_KS_NOT_EXIST;
@@ -97,15 +96,15 @@ namespace kvssd_hashmap
         {
             return ret;
         }
-        rwl.lock_write();
+        pthread_rwlock_wrlock(&rwl);
         auto it = db.find(key);
         if (it != db.end())
         {
-            rwl.unlock_write();
+            pthread_rwlock_unlock(&rwl);
             return kvs_result::KVS_ERR_KS_EXIST;
         }
         db.insert({key, value});
-        rwl.unlock_write();
+        pthread_rwlock_unlock(&rwl);
         return kvs_result::KVS_SUCCESS;
     }
 
@@ -116,15 +115,15 @@ namespace kvssd_hashmap
         {
             return ret;
         }
-        rwl.lock_write();
+        pthread_rwlock_wrlock(&rwl);
         auto it = db.find(key);
         if (it == db.end())
         {
-            rwl.unlock_write();
+            pthread_rwlock_unlock(&rwl);
             return kvs_result::KVS_ERR_KS_NOT_EXIST;
         }
         it->second = value;
-        rwl.unlock_write();
+        pthread_rwlock_unlock(&rwl);
         return kvs_result::KVS_SUCCESS;
     }
 
@@ -135,15 +134,15 @@ namespace kvssd_hashmap
         {
             return ret;
         }
-        rwl.lock_write();
+        pthread_rwlock_wrlock(&rwl);
         auto it = db.find(key);
         if (it == db.end())
         {
-            rwl.unlock_write();
+            pthread_rwlock_unlock(&rwl);
             return kvs_result::KVS_ERR_KS_NOT_EXIST;
         }
         db.erase(key);
-        rwl.unlock_write();
+        pthread_rwlock_unlock(&rwl);
         return kvs_result::KVS_SUCCESS;
     }
 
