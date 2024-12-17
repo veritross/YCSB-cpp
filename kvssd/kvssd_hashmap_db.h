@@ -86,8 +86,6 @@ public:
     KVSSD() = default;
     virtual ~KVSSD() = default;
 
-    virtual kvs_result ValidateRequest(const kvs_key &, std::optional<std::reference_wrapper<const kvs_value>>) = 0;
-
     virtual kvs_result Read(const kvs_key &, kvs_value &) = 0;
     virtual kvs_result Insert(const kvs_key &, const kvs_value &) = 0;
     virtual kvs_result Update(const kvs_key &, const kvs_value &) = 0;
@@ -100,8 +98,6 @@ public:
     Hashmap_KVSSD();
     ~Hashmap_KVSSD();
 
-    kvs_result ValidateRequest(const kvs_key &, std::optional<std::reference_wrapper<const kvs_value>>);
-
     kvs_result Read(const kvs_key &, kvs_value &);
     kvs_result Insert(const kvs_key &, const kvs_value &);
     kvs_result Update(const kvs_key &, const kvs_value &);
@@ -110,6 +106,8 @@ public:
 private:
     std::unordered_map<kvs_key, kvs_value> db;
     ReadersWriterLock rwl;
+
+    kvs_result ValidateRequest(const kvs_key &, std::optional<std::reference_wrapper<const kvs_value>>);
 };
 
 #endif // YCSB_C_KVSSD_HASHMAP_DB_H_
