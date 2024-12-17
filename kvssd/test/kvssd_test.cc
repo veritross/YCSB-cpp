@@ -14,10 +14,10 @@ namespace
     protected:
         void SetUp() override
         {
-            kvssd.reset(new Hashmap_KVSSD());
+            kvssd.reset(new kvssd_hashmap::Hashmap_KVSSD());
         }
 
-        std::unique_ptr<KVSSD> kvssd;
+        std::unique_ptr<kvssd_hashmap::KVSSD> kvssd;
         std::vector<ycsbc::DB::Field> output_value;
     };
 
@@ -83,11 +83,11 @@ namespace
     {
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
         }
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(ycsbc::ReadRow(kvssd, key[i], output_value));
+            EXPECT_NO_THROW(kvssd_hashmap::ReadRow(kvssd, key[i], output_value));
             EXPECT_FALSE(FieldVectorCmp(value[i], output_value));
         }
     }
@@ -96,23 +96,23 @@ namespace
     {
         for (size_t i = 0; i < 100'000; i++)
         {
-            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
         }
         for (size_t i = 0; i < 100'000; i++)
         {
-            EXPECT_NO_THROW(ycsbc::ReadRow(kvssd, key[i], output_value));
+            EXPECT_NO_THROW(kvssd_hashmap::ReadRow(kvssd, key[i], output_value));
             EXPECT_FALSE(FieldVectorCmp(value[i], output_value));
         }
     }
 
     TEST_F(KvssdHashMapDbImplTest, Reinsertion)
     {
-        EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[0], value[0]));
-        EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[1], value[1]));
+        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[0], value[0]));
+        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[1], value[1]));
         EXPECT_THROW({
         try
         {
-            ycsbc::InsertRow(kvssd, key[0], value[2]);
+            kvssd_hashmap::InsertRow(kvssd, key[0], value[2]);
         }
         catch( const ycsbc::utils::Exception& e )
         {
@@ -122,7 +122,7 @@ namespace
         EXPECT_THROW({
         try
         {
-            ycsbc::InsertRow(kvssd, key[1], value[3]);
+            kvssd_hashmap::InsertRow(kvssd, key[1], value[3]);
         }
         catch( const ycsbc::utils::Exception& e )
         {
@@ -135,15 +135,15 @@ namespace
     {
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
         }
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(ycsbc::UpdateRow(kvssd, key[i], value[i + 10]));
+            EXPECT_NO_THROW(kvssd_hashmap::UpdateRow(kvssd, key[i], value[i + 10]));
         }
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(ycsbc::ReadRow(kvssd, key[i], output_value));
+            EXPECT_NO_THROW(kvssd_hashmap::ReadRow(kvssd, key[i], output_value));
             EXPECT_FALSE(FieldVectorCmp(value[i + 10], output_value));
         }
     }
@@ -152,15 +152,15 @@ namespace
     {
         for (size_t i = 0; i < 100'000; i++)
         {
-            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
         }
         for (size_t i = 0; i < 100'000; i++)
         {
-            EXPECT_NO_THROW(ycsbc::UpdateRow(kvssd, key[i], value[(i + 500) % 100'000]));
+            EXPECT_NO_THROW(kvssd_hashmap::UpdateRow(kvssd, key[i], value[(i + 500) % 100'000]));
         }
         for (size_t i = 0; i < 100'000; i++)
         {
-            EXPECT_NO_THROW(ycsbc::ReadRow(kvssd, key[i], output_value));
+            EXPECT_NO_THROW(kvssd_hashmap::ReadRow(kvssd, key[i], output_value));
             EXPECT_FALSE(FieldVectorCmp(value[(i + 500) % 100'000], output_value));
         }
     }
@@ -169,12 +169,12 @@ namespace
     {
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
         }
         EXPECT_THROW({
         try
         {
-            ycsbc::UpdateRow(kvssd, key[99], value[99]);
+            kvssd_hashmap::UpdateRow(kvssd, key[99], value[99]);
         }
         catch( const ycsbc::utils::Exception& e )
         {
@@ -187,13 +187,13 @@ namespace
     {
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
         }
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(ycsbc::ReadRow(kvssd, key[i], output_value));
+            EXPECT_NO_THROW(kvssd_hashmap::ReadRow(kvssd, key[i], output_value));
             EXPECT_FALSE(FieldVectorCmp(value[i], output_value));
-            EXPECT_NO_THROW(ycsbc::DeleteRow(kvssd, key[i]));
+            EXPECT_NO_THROW(kvssd_hashmap::DeleteRow(kvssd, key[i]));
         }
     }
 
@@ -201,13 +201,13 @@ namespace
     {
         for (size_t i = 0; i < 100'000; i++)
         {
-            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
         }
         for (size_t i = 0; i < 100'000; i++)
         {
-            EXPECT_NO_THROW(ycsbc::ReadRow(kvssd, key[i], output_value));
+            EXPECT_NO_THROW(kvssd_hashmap::ReadRow(kvssd, key[i], output_value));
             EXPECT_FALSE(FieldVectorCmp(value[i], output_value));
-            EXPECT_NO_THROW(ycsbc::DeleteRow(kvssd, key[i]));
+            EXPECT_NO_THROW(kvssd_hashmap::DeleteRow(kvssd, key[i]));
         }
     }
 
@@ -215,12 +215,12 @@ namespace
     {
         for (size_t i = 0; i < 10; i++)
         {
-            EXPECT_NO_THROW(ycsbc::InsertRow(kvssd, key[i], value[i]));
+            EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
         }
         EXPECT_THROW({
         try
         {
-            ycsbc::DeleteRow(kvssd, key[99]);
+            kvssd_hashmap::DeleteRow(kvssd, key[99]);
         }
         catch( const ycsbc::utils::Exception& e )
         {

@@ -7,7 +7,7 @@
 
 #include <memory>
 
-namespace ycsbc
+namespace kvssd_hashmap
 {
     /**
      * @brief CreateRow()를 통해 할당된 스마트 포인터를 관리하는 Class
@@ -50,22 +50,22 @@ namespace ycsbc
         std::unique_ptr<kvs_value> value;
     };
 
-    void SerializeRow(const std::vector<DB::Field> &values, std::string *data);
-    void DeserializeRow(std::vector<DB::Field> *values, const char *data_ptr, size_t data_len);
+    void SerializeRow(const std::vector<ycsbc::DB::Field> &values, std::string *data);
+    void DeserializeRow(std::vector<ycsbc::DB::Field> *values, const char *data_ptr, size_t data_len);
 
-    std::unique_ptr<kvs_row> CreateRow(const std::string &key_in, const std::vector<DB::Field> &value_in);
+    std::unique_ptr<kvs_row> CreateRow(const std::string &key_in, const std::vector<ycsbc::DB::Field> &value_in);
 
     void PrintRow(const kvs_value &value);
-    void PrintFieldVector(const std::vector<DB::Field> &value);
+    void PrintFieldVector(const std::vector<ycsbc::DB::Field> &value);
 
     void CheckAPI(kvs_result ret);
 
     // Wrapper 함수 4가지
-    void ReadRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key, std::vector<DB::Field> &value);
-    void InsertRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key, const std::vector<DB::Field> &value);
-    void UpdateRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key, const std::vector<DB::Field> &value);
+    void ReadRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key, std::vector<ycsbc::DB::Field> &value);
+    void InsertRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key, const std::vector<ycsbc::DB::Field> &value);
+    void UpdateRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key, const std::vector<ycsbc::DB::Field> &value);
     void DeleteRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key);
 
-} // namespace ycsbc
+} // namespace kvssd_hashmap
 
 #endif // YCSB_C_KVSSD_HASHMAP_DB_IMPL_H_
