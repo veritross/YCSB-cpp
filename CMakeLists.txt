@@ -23,6 +23,7 @@ endif()
 
 option(BIND_ROCKSDB "build with rocksdb" OFF)
 option(BIND_LMDB "build with lmdb" OFF)
+option(BIND_KVSSD "build with kvssd" OFF)
 option(BIND_LEVELDB "build with leveldb" OFF)
 option(BIND_WIREDTIGER "build with wiredtiger" OFF)
 
@@ -82,6 +83,14 @@ if (BIND_LMDB)
     message(STATUS "Found LMDB library")
 else()
     message(STATUS "BIND_LMDB - OFF")
+endif()
+
+if (BIND_KVSSD)
+    message(STATUS "BIND_KVSSD - ON")
+    file(GLOB_RECURSE YCSB_KVSSD_SRC "kvssd/*.cc")
+    target_sources(ycsb PRIVATE ${YCSB_KVSSD_SRC})
+else()
+    message(STATUS "BIND_KVSSD - OFF")
 endif()
 
 if (BIND_LEVELDB)
