@@ -17,7 +17,7 @@ namespace
             kvssd.reset(new kvssd_hashmap::Hashmap_KVSSD());
         }
 
-        std::unique_ptr<kvssd_hashmap::KVSSD> kvssd;
+        std::unique_ptr<kvssd::KVSSD> kvssd;
         std::vector<ycsbc::DB::Field> output_value;
     };
 
@@ -71,7 +71,7 @@ namespace
     }
 
     struct ThreadArgs {
-        const std::unique_ptr<kvssd_hashmap::KVSSD>* kv; 
+        const std::unique_ptr<kvssd::KVSSD>* kv; 
         const std::vector<std::string>* keys; 
         const std::vector<std::vector<ycsbc::DB::Field>>* values;
         size_t start_idx;

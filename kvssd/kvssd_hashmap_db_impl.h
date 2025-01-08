@@ -52,8 +52,8 @@ namespace kvssd_hashmap
 
     struct kvs_row
     {
-        std::unique_ptr<kvs_key> key;
-        std::unique_ptr<kvs_value> value;
+        std::unique_ptr<kvssd::kvs_key> key;
+        std::unique_ptr<kvssd::kvs_value> value;
     };
 
     void SerializeRow(const std::vector<ycsbc::DB::Field> &values, std::string *data);
@@ -61,16 +61,16 @@ namespace kvssd_hashmap
 
     std::unique_ptr<kvs_row> CreateRow(const std::string &key_in, const std::vector<ycsbc::DB::Field> &value_in);
 
-    void PrintRow(const kvs_value &value);
+    void PrintRow(const kvssd::kvs_value &value);
     void PrintFieldVector(const std::vector<ycsbc::DB::Field> &value);
 
-    void CheckAPI(kvs_result ret);
+    void CheckAPI(const kvssd::kvs_result ret);
 
     // Wrapper 함수 4가지
-    void ReadRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key, std::vector<ycsbc::DB::Field> &value);
-    void InsertRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key, const std::vector<ycsbc::DB::Field> &value);
-    void UpdateRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key, const std::vector<ycsbc::DB::Field> &value);
-    void DeleteRow(const std::unique_ptr<KVSSD> &kvssd, const std::string &key);
+    void ReadRow(const std::unique_ptr<kvssd::KVSSD> &kvssd, const std::string &key, std::vector<ycsbc::DB::Field> &value);
+    void InsertRow(const std::unique_ptr<kvssd::KVSSD> &kvssd, const std::string &key, const std::vector<ycsbc::DB::Field> &value);
+    void UpdateRow(const std::unique_ptr<kvssd::KVSSD> &kvssd, const std::string &key, const std::vector<ycsbc::DB::Field> &value);
+    void DeleteRow(const std::unique_ptr<kvssd::KVSSD> &kvssd, const std::string &key);
 
 } // namespace kvssd_hashmap
 
