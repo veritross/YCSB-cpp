@@ -21,7 +21,8 @@ namespace kvssd_hashmap
         static void Add(std::unique_ptr<char[]> memory)
         {
             static std::once_flag flag;
-            std::call_once(flag, []() { GetInstance(); });
+            std::call_once(flag, []()
+                           { GetInstance(); });
 
             std::lock_guard<std::mutex> lock(GetInstance().mtx);
             GetInstance().memoryList.push_back(std::move(memory));

@@ -48,9 +48,9 @@ namespace kvssd_hashmap
         kvssd::kvs_result Delete(const kvssd::kvs_key &);
 
         ycsbc::DB::Status Read(const std::string &table, const std::string &key,
-                    const std::vector<std::string> *fields, std::vector<ycsbc::DB::Field> &result);
+                               const std::vector<std::string> *fields, std::vector<ycsbc::DB::Field> &result);
         ycsbc::DB::Status Scan(const std::string &table, const std::string &key, int len,
-                    const std::vector<std::string> *fields, std::vector<std::vector<ycsbc::DB::Field>> &result);
+                               const std::vector<std::string> *fields, std::vector<std::vector<ycsbc::DB::Field>> &result);
         ycsbc::DB::Status Update(const std::string &table, const std::string &key, std::vector<ycsbc::DB::Field> &values);
         ycsbc::DB::Status Insert(const std::string &table, const std::string &key, std::vector<ycsbc::DB::Field> &values);
         ycsbc::DB::Status Delete(const std::string &table, const std::string &key);
