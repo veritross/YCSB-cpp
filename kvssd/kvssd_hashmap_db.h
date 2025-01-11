@@ -47,14 +47,6 @@ namespace kvssd_hashmap
         kvssd::kvs_result Update(const kvssd::kvs_key &, const kvssd::kvs_value &);
         kvssd::kvs_result Delete(const kvssd::kvs_key &);
 
-        ycsbc::DB::Status Read(const std::string &table, const std::string &key,
-                               const std::vector<std::string> *fields, std::vector<ycsbc::DB::Field> &result);
-        ycsbc::DB::Status Scan(const std::string &table, const std::string &key, int len,
-                               const std::vector<std::string> *fields, std::vector<std::vector<ycsbc::DB::Field>> &result);
-        ycsbc::DB::Status Update(const std::string &table, const std::string &key, std::vector<ycsbc::DB::Field> &values);
-        ycsbc::DB::Status Insert(const std::string &table, const std::string &key, std::vector<ycsbc::DB::Field> &values);
-        ycsbc::DB::Status Delete(const std::string &table, const std::string &key);
-
     private:
         std::unordered_map<kvssd::kvs_key, kvssd::kvs_value> db;
         pthread_rwlock_t rwl;

@@ -63,7 +63,7 @@ namespace kvssd
         uint32_t offset;            // [optional] device에 저장된 value의 offset (단위: byte)
     };
 
-    class KVSSD : public ycsbc::DB
+    class KVSSD
     {
     public:
         KVSSD() = default;
