@@ -31,3 +31,15 @@ target_link_libraries(${TARGET_APP} gtest_main ${SrcLib})
 
 include(GoogleTest)
 gtest_discover_tests(${TARGET_APP})
+
+# Valgrind memcheck 설정 및 테스트 등록
+find_program(VALGRIND "valgrind")
+if(VALGRIND)
+    add_test(NAME memcheck_specific_test
+             COMMAND ${VALGRIND}
+                     --tool=memcheck
+                     --leak-check=full
+                     --show-reachable=yes
+                     $<TARGET_FILE:${TARGET_APP}>
+                     --gtest_filter=KvssdHashMapDbImplTest.ReadSmall)
+endif()
