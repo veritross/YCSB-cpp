@@ -5,40 +5,24 @@
 namespace kvssd_hashmap
 {
 
-    const char *kvstrerror[] = {
-        "Successful",                           // KVS_SUCCESS
-        "Buffer space is not enough",           // KVS_ERR_BUFFER_SMALL
-        "Device does not have enough space",    // KVS_ERR_DEV_CAPAPCITY
-        "No device with the dev_hd exists",     // KVS_ERR_DEV_NOT_EXIST
-        "Key space does not have enough space", // KVS_ERR_KS_CAPACITY
-        "Key space is already created",         // KVS_ERR_KS_EXIST
-        "Index is not valid",                   // KVS_ERR_KS_INDEX
-        "Key space name is not valid",          // KVS_ERR_KS_NAME
-        "Key space does not exist",             // KVS_ERR_KS_NOT_EXIST
-        "Key space does not open",              // KVS_ERR_KS_NOT_OPEN
-        "Key space is already opened",          // KVS_ERR_KS_OPEN
-        "Iterator filter is not valid",         // KVS_ERR_ITERATOR_FILTER_INVALID
-        "Maximum number of iterators opened",   // KVS_ERR_ITERATOR_MAX
-        "Iterator Key Group does not exist",    // KVS_ERR_ITERATOR_NOT_EXIST
-        "Iterator is already opened",           // KVS_ERR_ITERATOR_OPEN
-        "Key is not valid",                     // KVS_ERR_KEY_LENGTH_INVALID
-        "Key does not exist",                   // KVS_ERR_KEY_NOT_EXIST
-        "Option is not supported",              // KVS_ERR_OPTION_INVALID
-        "Null input parameter",                 // KVS_ERR_PARAM_INVALID
-        "I/O error occurs",                     // KVS_ERR_SYS_IO
-        "Value length is out of range",         // KVS_ERR_VALUE_LENGTH_INVALID
-        "Value offset is out of range",         // KVS_ERR_VALUE_OFFSET_INVALID
-        "Value offset is misaligned",           // KVS_ERR_VALUE_OFFSET_MISALIGNED
-        "Value update is not allowed",          // KVS_ERR_VALUE_UPDATE_NOT_ALLOWED
-        "Device was not opened yet"             // KVS_ERR_DEV_NOT_OPENED
-    };
-
     Hashmap_KVSSD::Hashmap_KVSSD()
     {
         pthread_rwlock_init(&rwl, NULL);
     }
     Hashmap_KVSSD::~Hashmap_KVSSD()
     {
+        for (auto &entry : db)
+        {
+            if (entry.first.key != nullptr)
+            {
+                free(const_cast<void *>(entry.first.key));
+            }
+            if (entry.second.value != nullptr)
+            {
+                free(entry.second.value);
+            }
+        }
+        db.clear();
         pthread_rwlock_destroy(&rwl);
     }
 
@@ -68,6 +52,32 @@ namespace kvssd_hashmap
             }
         }
         return kvssd::kvs_result::KVS_SUCCESS;
+    }
+
+    kvssd::kvs_key Hashmap_KVSSD::DeepCopyKey(const kvssd::kvs_key &orig)
+    {
+        kvssd::kvs_key copy;
+        copy.length = orig.length;
+        copy.key = malloc(orig.length);
+        if (copy.key && orig.key)
+        {
+            std::memcpy(copy.key, orig.key, orig.length);
+        }
+        return copy;
+    }
+
+    kvssd::kvs_value Hashmap_KVSSD::DeepCopyValue(const kvssd::kvs_value &orig)
+    {
+        kvssd::kvs_value copy;
+        copy.length = orig.length;
+        copy.actual_value_size = orig.actual_value_size;
+        copy.offset = orig.offset;
+        copy.value = malloc(orig.length);
+        if (copy.value && orig.value)
+        {
+            std::memcpy(copy.value, orig.value, orig.length);
+        }
+        return copy;
     }
 
     // API 함수 4가지
@@ -103,7 +113,10 @@ namespace kvssd_hashmap
             pthread_rwlock_unlock(&rwl);
             return kvssd::kvs_result::KVS_ERR_KS_EXIST;
         }
-        db.insert({key, value});
+        kvssd::kvs_key key_copy = DeepCopyKey(key);
+        kvssd::kvs_value value_copy = DeepCopyValue(value);
+
+        db.insert({key_copy, value_copy});
         pthread_rwlock_unlock(&rwl);
         return kvssd::kvs_result::KVS_SUCCESS;
     }
@@ -122,7 +135,12 @@ namespace kvssd_hashmap
             pthread_rwlock_unlock(&rwl);
             return kvssd::kvs_result::KVS_ERR_KS_NOT_EXIST;
         }
-        it->second = value;
+        kvssd::kvs_value value_copy = DeepCopyValue(value);
+        if (it->second.value != nullptr)
+        {
+            free(it->second.value);
+        }
+        it->second = value_copy;
         pthread_rwlock_unlock(&rwl);
         return kvssd::kvs_result::KVS_SUCCESS;
     }

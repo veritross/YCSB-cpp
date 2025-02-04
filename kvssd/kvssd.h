@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <condition_variable>
 
+#include "core/db_factory.h"
+
 namespace kvssd
 {
 
@@ -41,7 +43,34 @@ namespace kvssd
         KVS_ERR_DEV_NOT_OPENED = 0x018,           // device was not opened yet
     };
 
-    extern const char *kvstrerror[]; // kvs_result을 Index, 대응되는 에러문을 Value로 갖는 배열
+    inline const char *kvstrerror[] = // kvs_result을 Index, 대응되는 에러문을 Value로 갖는 배열 = {
+        {
+            "Successful",                           // KVS_SUCCESS
+            "Buffer space is not enough",           // KVS_ERR_BUFFER_SMALL
+            "Device does not have enough space",    // KVS_ERR_DEV_CAPAPCITY
+            "No device with the dev_hd exists",     // KVS_ERR_DEV_NOT_EXIST
+            "Key space does not have enough space", // KVS_ERR_KS_CAPACITY
+            "Key space is already created",         // KVS_ERR_KS_EXIST
+            "Index is not valid",                   // KVS_ERR_KS_INDEX
+            "Key space name is not valid",          // KVS_ERR_KS_NAME
+            "Key space does not exist",             // KVS_ERR_KS_NOT_EXIST
+            "Key space does not open",              // KVS_ERR_KS_NOT_OPEN
+            "Key space is already opened",          // KVS_ERR_KS_OPEN
+            "Iterator filter is not valid",         // KVS_ERR_ITERATOR_FILTER_INVALID
+            "Maximum number of iterators opened",   // KVS_ERR_ITERATOR_MAX
+            "Iterator Key Group does not exist",    // KVS_ERR_ITERATOR_NOT_EXIST
+            "Iterator is already opened",           // KVS_ERR_ITERATOR_OPEN
+            "Key is not valid",                     // KVS_ERR_KEY_LENGTH_INVALID
+            "Key does not exist",                   // KVS_ERR_KEY_NOT_EXIST
+            "Option is not supported",              // KVS_ERR_OPTION_INVALID
+            "Null input parameter",                 // KVS_ERR_PARAM_INVALID
+            "I/O error occurs",                     // KVS_ERR_SYS_IO
+            "Value length is out of range",         // KVS_ERR_VALUE_LENGTH_INVALID
+            "Value offset is out of range",         // KVS_ERR_VALUE_OFFSET_INVALID
+            "Value offset is misaligned",           // KVS_ERR_VALUE_OFFSET_MISALIGNED
+            "Value update is not allowed",          // KVS_ERR_VALUE_UPDATE_NOT_ALLOWED
+            "Device was not opened yet"             // KVS_ERR_DEV_NOT_OPENED
+    };
 
     struct kvs_key
     {
@@ -76,5 +105,7 @@ namespace kvssd
     };
 
 } // namespace kvssd
+
+ycsbc::DB *NewKvssdDB();
 
 #endif // YCSB_C_KVSSD_H_

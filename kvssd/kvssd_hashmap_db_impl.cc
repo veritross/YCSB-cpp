@@ -37,42 +37,33 @@ namespace kvssd_hashmap
         }
     }
 
-    std::unique_ptr<kvs_row> CreateRow(const std::string &key_in, const std::vector<ycsbc::DB::Field> &value_in)
+    std::unique_ptr<kvs_row, KvsRowDeleter> CreateRow(const std::string &key_in, const std::vector<ycsbc::DB::Field> &value_in)
     {
-        std::unique_ptr<char[]> key_data = std::make_unique<char[]>(key_in.size());
-        std::memcpy(key_data.get(), key_in.data(), key_in.size());
-        void *key = static_cast<void *>(key_data.get());
         uint16_t key_length = key_in.size();
-
+        void *key = malloc(key_length);
+        std::memcpy(key, (void *)(key_in.data()), key_length);
         std::string value_sz;
         SerializeRow(value_in, &value_sz);
-
-        std::unique_ptr<char[]> value_data = std::make_unique<char[]>(value_sz.size());
-        std::memcpy(value_data.get(), value_sz.data(), value_sz.size());
-
-        void *value = static_cast<void *>(value_data.get());
+        void *value = malloc(value_sz.size());
+        std::memcpy(value, value_sz.data(), value_sz.size());
         uint32_t value_length = value_sz.size();
         uint32_t actual_value_size = value_sz.size();
         uint32_t offset = 0;
 
-        std::unique_ptr<kvssd::kvs_key> newKey = std::make_unique<kvssd::kvs_key>();
+        kvssd::kvs_key *newKey = new kvssd::kvs_key;
         newKey->key = key;
         newKey->length = key_length;
-
-        std::unique_ptr<kvssd::kvs_value> newValue = std::make_unique<kvssd::kvs_value>();
-        newValue->value = static_cast<void *>(value_data.get());
+        kvssd::kvs_value *newValue = new kvssd::kvs_value;
+        newValue->value = value;
         newValue->length = value_sz.size();
         newValue->actual_value_size = value_sz.size();
         newValue->offset = 0;
 
-        std::unique_ptr<kvs_row> newRow = std::make_unique<kvs_row>();
-        newRow->key = std::move(newKey);
-        newRow->value = std::move(newValue);
+        kvs_row *newRow = new kvs_row;
+        newRow->key = newKey;
+        newRow->value = newValue;
 
-        ManagedMemory::Add(std::move(key_data));
-        ManagedMemory::Add(std::move(value_data));
-
-        return newRow;
+        return std::unique_ptr<kvs_row, KvsRowDeleter>(newRow);
     }
 
     // kvs_value의 값을 출력하는 함수
@@ -121,26 +112,26 @@ namespace kvssd_hashmap
     void ReadRow(const std::unique_ptr<kvssd::KVSSD> &kvssd, const std::string &key, std::vector<ycsbc::DB::Field> &value)
     {
         value = {};
-        std::unique_ptr<kvs_row> newRow = CreateRow(key, value);
+        std::unique_ptr<kvs_row, KvsRowDeleter> newRow = CreateRow(key, value);
         CheckAPI(kvssd->Read(*newRow->key, *newRow->value));
         DeserializeRow(&value, static_cast<char *>(newRow->value->value), newRow->value->length);
     }
 
     void InsertRow(const std::unique_ptr<kvssd::KVSSD> &kvssd, const std::string &key, const std::vector<ycsbc::DB::Field> &value)
     {
-        std::unique_ptr<kvs_row> newRow = CreateRow(key, value);
+        std::unique_ptr<kvs_row, KvsRowDeleter> newRow = CreateRow(key, value);
         CheckAPI(kvssd->Insert(*newRow->key, *newRow->value));
     }
 
     void UpdateRow(const std::unique_ptr<kvssd::KVSSD> &kvssd, const std::string &key, const std::vector<ycsbc::DB::Field> &value)
     {
-        std::unique_ptr<kvs_row> newRow = CreateRow(key, value);
+        std::unique_ptr<kvs_row, KvsRowDeleter> newRow = CreateRow(key, value);
         CheckAPI(kvssd->Update(*newRow->key, *newRow->value));
     }
 
     void DeleteRow(const std::unique_ptr<kvssd::KVSSD> &kvssd, const std::string &key)
     {
-        std::unique_ptr<kvs_row> newRow = CreateRow(key, {});
+        std::unique_ptr<kvs_row, KvsRowDeleter> newRow = CreateRow(key, {});
         CheckAPI(kvssd->Delete(*newRow->key));
     }
 

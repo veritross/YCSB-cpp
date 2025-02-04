@@ -2,11 +2,9 @@
 #include "kvssd_hashmap_db.h"
 #include "kvssd_hashmap_db_impl.h"
 
-#include "core/db_factory.h"
-
 namespace
 {
-    const std::string PROP_BACKEND = "kvssd.backend";
+    const std::string PROP_BACKEND = "kvssd.hashmap";
     const std::string PROP_BACKEND_DEFAULT = "kvssd";
 } // anonymous namespace
 
@@ -26,7 +24,7 @@ public:
     ycsbc::DB::Status Scan(const std::string &table, const std::string &key, int len,
                            const std::vector<std::string> *fields, std::vector<std::vector<ycsbc::DB::Field>> &result)
     {
-        return kOK;
+        return kNotImplemented;
     }
     ycsbc::DB::Status Update(const std::string &table, const std::string &key, std::vector<ycsbc::DB::Field> &values)
     {
@@ -49,7 +47,7 @@ ycsbc::DB *NewKvssdDB()
 {
     std::string backend = PROP_BACKEND;
     ycsbc::DB *ret = nullptr;
-    if (backend == "hashmap")
+    if (backend == "kvssd.hashmap")
     {
         kvssd::KVSSD *k = new kvssd_hashmap::Hashmap_KVSSD();
         ret = new KvssdDbWrapper(k);

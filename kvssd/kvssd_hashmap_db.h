@@ -52,6 +52,8 @@ namespace kvssd_hashmap
         pthread_rwlock_t rwl;
 
         kvssd::kvs_result ValidateRequest(const kvssd::kvs_key &, std::optional<std::reference_wrapper<const kvssd::kvs_value>>);
+        kvssd::kvs_key DeepCopyKey(const kvssd::kvs_key &);
+        kvssd::kvs_value DeepCopyValue(const kvssd::kvs_value &);
     };
 
 } // namespace kvssd_hashmap

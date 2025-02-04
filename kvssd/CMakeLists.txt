@@ -18,7 +18,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=thread -g")
         
 set(TARGET_APP kvssd_test)
 set(SrcLib SrcLib)
-set(SrcFiles kvssd_hashmap_db_impl.cc kvssd_hashmap_db.cc)
+set(SrcFiles kvssd_hashmap_db_impl.cc kvssd_hashmap_db.cc kvssd.cc)
 
 add_library(${SrcLib} STATIC ${SrcFiles})
 target_include_directories(${SrcLib} PUBLIC ${CMAKE_SOURCE_DIR})
