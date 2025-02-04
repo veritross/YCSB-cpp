@@ -4,8 +4,7 @@
 #include "kvssd_hashmap_db_impl.h"
 
 namespace {
-const std::string PROP_BACKEND = "kvssd.hashmap";
-const std::string PROP_BACKEND_DEFAULT = "kvssd";
+const std::string PROP_BACKEND = "hashmap";
 }  // anonymous namespace
 
 class KvssdDbWrapper : public ycsbc::DB {
@@ -44,7 +43,7 @@ class KvssdDbWrapper : public ycsbc::DB {
 ycsbc::DB *NewKvssdDB() {
     std::string backend = PROP_BACKEND;
     ycsbc::DB *ret = nullptr;
-    if (backend == "kvssd.hashmap") {
+    if (backend == "hashmap") {
         kvssd::KVSSD *k = new kvssd_hashmap::Hashmap_KVSSD();
         ret = new KvssdDbWrapper(k);
     }

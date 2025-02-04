@@ -50,9 +50,9 @@ std::unique_ptr<kvs_row, KvsRowDeleter> CreateRow(const std::string &key_in,
     newKey->length = key_length;
     kvssd::kvs_value *newValue = new kvssd::kvs_value;
     newValue->value = value;
-    newValue->length = value_sz.size();
-    newValue->actual_value_size = value_sz.size();
-    newValue->offset = 0;
+    newValue->length = value_length;
+    newValue->actual_value_size = actual_value_size;
+    newValue->offset = offset;
 
     kvs_row *newRow = new kvs_row;
     newRow->key = newKey;
@@ -70,7 +70,7 @@ void PrintRow(const kvssd::kvs_value &value) {
         return;
     }
     printf("Name: Value\n");
-    for (auto const field : value_vec) {
+    for (auto const &field : value_vec) {
         printf("%s: %s\n", field.name.data(), field.value.data());
     }
 }
@@ -83,7 +83,7 @@ void PrintFieldVector(const std::vector<ycsbc::DB::Field> &value) {
         return;
     }
     printf("Name: Value\n");
-    for (auto const field : value) {
+    for (auto const &field : value) {
         printf("%s: %s\n", field.name.data(), field.value.data());
     }
     printf("\n");
