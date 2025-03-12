@@ -1,4 +1,6 @@
 #include "kvssd_hashmap_db_impl.h"
+#include <cstdio>
+#include <iostream>
 
 namespace kvssd_hashmap {
 
@@ -18,18 +20,22 @@ void SerializeRow(const std::vector<ycsbc::DB::Field> &values, std::string *data
 void DeserializeRow(std::vector<ycsbc::DB::Field> *values, const char *data_ptr, size_t data_len) {
     const char *p = data_ptr;
     const char *lim = p + data_len;
+    std::cout << "hello!" << std::endl;
     while (p != lim) {
         assert(p < lim);
-        uint32_t len = *reinterpret_cast<const uint32_t *>(p);
+        std::cout << "I want to die " << lim - p << std::endl;
+        uint32_t vlen = *reinterpret_cast<const uint32_t *>(p);
         p += sizeof(uint32_t);
-        std::string field(p, static_cast<const size_t>(len));
-        p += len;
-        len = *reinterpret_cast<const uint32_t *>(p);
+        std::string field(p, static_cast<const size_t>(vlen));
+        p += vlen;
+        uint32_t tlen = *reinterpret_cast<const uint32_t *>(p);
         p += sizeof(uint32_t);
-        std::string value(p, static_cast<const size_t>(len));
-        p += len;
+        std::string value(p, static_cast<const size_t>(tlen));
+        p += tlen;
+        std::cout << p - data_ptr << "/" << lim - p << std::endl;
         values->push_back({field, value});
     }
+    std::cout << "bye bye~" << std::endl;
 }
 
 std::unique_ptr<kvs_row, KvsRowDeleter> CreateRow(const std::string &key_in,
