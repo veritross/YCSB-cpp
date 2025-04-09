@@ -39,7 +39,8 @@ void SerializeRow(const std::vector<ycsbc::DB::Field> &values, std::string *data
 void DeserializeRow(std::vector<ycsbc::DB::Field> *values, const char *data_ptr, size_t data_len);
 
 std::unique_ptr<kvs_row, KvsRowDeleter> CreateRow(const std::string &key_in,
-                                                  const std::vector<ycsbc::DB::Field> &value_in);
+                                                  const std::vector<ycsbc::DB::Field> &value_in,
+                                                  bool allocate_value);
 
 void PrintRow(const kvssd::kvs_value &value);
 void PrintFieldVector(const std::vector<ycsbc::DB::Field> &value);

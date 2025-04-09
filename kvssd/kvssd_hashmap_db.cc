@@ -6,17 +6,17 @@ namespace kvssd_hashmap {
 
 Hashmap_KVSSD::Hashmap_KVSSD() { pthread_rwlock_init(&rwl, NULL); }
 Hashmap_KVSSD::~Hashmap_KVSSD() {
-    for (auto &entry : db) {
-        auto it = db.find(entry.first);
-        if (entry.first.key != nullptr) {
-            free(entry.first.key);
+    pthread_rwlock_wrlock(&rwl);
+    for (auto it = db.begin(); it != db.end();) {
+        if (it->first.key != nullptr) {
+            free(it->first.key);
         }
-        if (entry.second.value != nullptr) {
-            free(entry.second.value);
+        if (it->second.value != nullptr) {
+            free(it->second.value);
         }
-        db.erase(it);
+        it = db.erase(it);
     }
-    db.clear();
+    pthread_rwlock_unlock(&rwl);
     pthread_rwlock_destroy(&rwl);
 }
 
@@ -78,7 +78,7 @@ kvssd::kvs_result Hashmap_KVSSD::Read(const kvssd::kvs_key &key, kvssd::kvs_valu
     if (it == db.end()) {
         return kvssd::kvs_result::KVS_ERR_KS_NOT_EXIST;
     }
-    value_out = it->second;
+    value_out = DeepCopyValue(it->second);
     return kvssd::kvs_result::KVS_SUCCESS;
 }
 
@@ -112,6 +112,12 @@ kvssd::kvs_result Hashmap_KVSSD::Update(const kvssd::kvs_key &key, const kvssd::
         pthread_rwlock_unlock(&rwl);
         return kvssd::kvs_result::KVS_ERR_KS_NOT_EXIST;
     }
+
+    if (it->second.value != nullptr) {
+        free(it->second.value);
+        it->second.value = nullptr;
+    }
+
     kvssd::kvs_value value_copy = DeepCopyValue(value);
     it->second = value_copy;
     pthread_rwlock_unlock(&rwl);

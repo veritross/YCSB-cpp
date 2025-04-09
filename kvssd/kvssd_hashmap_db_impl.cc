@@ -1,4 +1,5 @@
 #include "kvssd_hashmap_db_impl.h"
+
 #include <cstdio>
 #include <iostream>
 
@@ -20,10 +21,8 @@ void SerializeRow(const std::vector<ycsbc::DB::Field> &values, std::string *data
 void DeserializeRow(std::vector<ycsbc::DB::Field> *values, const char *data_ptr, size_t data_len) {
     const char *p = data_ptr;
     const char *lim = p + data_len;
-    std::cout << "hello!" << std::endl;
     while (p != lim) {
         assert(p < lim);
-        std::cout << "I want to die " << lim - p << std::endl;
         uint32_t vlen = *reinterpret_cast<const uint32_t *>(p);
         p += sizeof(uint32_t);
         std::string field(p, static_cast<const size_t>(vlen));
@@ -32,24 +31,30 @@ void DeserializeRow(std::vector<ycsbc::DB::Field> *values, const char *data_ptr,
         p += sizeof(uint32_t);
         std::string value(p, static_cast<const size_t>(tlen));
         p += tlen;
-        std::cout << p - data_ptr << "/" << lim - p << std::endl;
         values->push_back({field, value});
     }
-    std::cout << "bye bye~" << std::endl;
 }
 
 std::unique_ptr<kvs_row, KvsRowDeleter> CreateRow(const std::string &key_in,
-                                                  const std::vector<ycsbc::DB::Field> &value_in) {
+                                                  const std::vector<ycsbc::DB::Field> &value_in,
+                                                  bool allocate_value = true) {
     uint16_t key_length = key_in.size();
     void *key = malloc(key_length);
     std::memcpy(key, (void *)(key_in.data()), key_length);
+
+    void *value = nullptr;
     std::string value_sz;
-    SerializeRow(value_in, &value_sz);
-    void *value = malloc(value_sz.size());
-    std::memcpy(value, value_sz.data(), value_sz.size());
-    uint32_t value_length = value_sz.size();
-    uint32_t actual_value_size = value_sz.size();
+    uint32_t value_length = 0;
+    uint32_t actual_value_size = 0;
     uint32_t offset = 0;
+    if (allocate_value) {
+        SerializeRow(value_in, &value_sz);
+        value = malloc(value_sz.size());
+        std::memcpy(value, value_sz.data(), value_sz.size());
+        value_length = value_sz.size();
+        actual_value_size = value_sz.size();
+        offset = 0;
+    }
 
     kvssd::kvs_key *newKey = new kvssd::kvs_key;
     newKey->key = key;
@@ -105,7 +110,7 @@ void CheckAPI(const kvssd::kvs_result ret) {
 void ReadRow(const std::unique_ptr<kvssd::KVSSD> &kvssd, const std::string &key,
              std::vector<ycsbc::DB::Field> &value) {
     value = {};
-    std::unique_ptr<kvs_row, KvsRowDeleter> newRow = CreateRow(key, value);
+    std::unique_ptr<kvs_row, KvsRowDeleter> newRow = CreateRow(key, value, false);
     CheckAPI(kvssd->Read(*newRow->key, *newRow->value));
     DeserializeRow(&value, static_cast<char *>(newRow->value->value), newRow->value->length);
 }

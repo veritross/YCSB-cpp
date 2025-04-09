@@ -2,6 +2,7 @@
 *.d
 
 ycsb
+result.load
 
 .vimrc
 tags

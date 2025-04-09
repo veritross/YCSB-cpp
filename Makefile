@@ -19,19 +19,19 @@ BIND_SQLITE ?= 0
 BIND_KVSSD ?= 1
 
 # Extra options
-DEBUG_BUILD ?= 1
+DEBUG_BUILD ?= 
 EXTRA_CXXFLAGS ?=
 EXTRA_LDFLAGS ?=
 
 # HdrHistogram for tail latency report
-BIND_HDRHISTOGRAM ?= 1
+BIND_HDRHISTOGRAM ?= 
 # Build and statically link library, submodule required
-BUILD_HDRHISTOGRAM ?= 1
+BUILD_HDRHISTOGRAM ?= 
 
 #----------------------------------------------------------
 
 ifeq ($(DEBUG_BUILD), 1)
-	CXXFLAGS += -g
+	CXXFLAGS += -g -fsanitize=address
 else
 	CXXFLAGS += -O2
 	CPPFLAGS += -DNDEBUG
