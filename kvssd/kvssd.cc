@@ -48,7 +48,7 @@ ycsbc::DB *NewKvssdDB() {
         ret = new KvssdDbWrapper(k);
     }
     if (backend == "kvssd") {
-        // ret = new kvssd::KVSSD();
+        // TODO: ret = new kvssd::KVSSD();
     }
     return ret;
 }

@@ -36,8 +36,7 @@ void DeserializeRow(std::vector<ycsbc::DB::Field> *values, const char *data_ptr,
 }
 
 std::unique_ptr<kvs_row, KvsRowDeleter> CreateRow(const std::string &key_in,
-                                                  const std::vector<ycsbc::DB::Field> &value_in,
-                                                  bool allocate_value = true) {
+                                                  const std::vector<ycsbc::DB::Field> &value_in) {
     uint16_t key_length = key_in.size();
     void *key = malloc(key_length);
     std::memcpy(key, (void *)(key_in.data()), key_length);
@@ -47,7 +46,7 @@ std::unique_ptr<kvs_row, KvsRowDeleter> CreateRow(const std::string &key_in,
     uint32_t value_length = 0;
     uint32_t actual_value_size = 0;
     uint32_t offset = 0;
-    if (allocate_value) {
+    if (!value_in.empty()) {
         SerializeRow(value_in, &value_sz);
         value = malloc(value_sz.size());
         std::memcpy(value, value_sz.data(), value_sz.size());
@@ -72,7 +71,7 @@ std::unique_ptr<kvs_row, KvsRowDeleter> CreateRow(const std::string &key_in,
     return std::unique_ptr<kvs_row, KvsRowDeleter>(newRow);
 }
 
-// kvs_value의 값을 출력하는 함수
+// Print kvs_value
 void PrintRow(const kvssd::kvs_value &value) {
     std::vector<ycsbc::DB::Field> value_vec;
     DeserializeRow(&value_vec, static_cast<char *>(value.value), value.length);
@@ -86,7 +85,7 @@ void PrintRow(const kvssd::kvs_value &value) {
     }
 }
 
-// Field vector의 값을 출력하는 함수
+// Print Field vector value
 void PrintFieldVector(const std::vector<ycsbc::DB::Field> &value) {
     printf("\n");
     if (value.size() == 0) {
@@ -106,11 +105,11 @@ void CheckAPI(const kvssd::kvs_result ret) {
     }
 }
 
-// Wrapper 함수 4가지
+// Wrapper Funtions
 void ReadRow(const std::unique_ptr<kvssd::KVSSD> &kvssd, const std::string &key,
              std::vector<ycsbc::DB::Field> &value) {
     value = {};
-    std::unique_ptr<kvs_row, KvsRowDeleter> newRow = CreateRow(key, value, false);
+    std::unique_ptr<kvs_row, KvsRowDeleter> newRow = CreateRow(key, {});
     CheckAPI(kvssd->Read(*newRow->key, *newRow->value));
     DeserializeRow(&value, static_cast<char *>(newRow->value->value), newRow->value->length);
 }

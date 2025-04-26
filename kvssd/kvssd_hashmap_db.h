@@ -16,15 +16,15 @@ namespace std {
 template <>
 struct hash<kvssd::kvs_key> {
     size_t operator()(const kvssd::kvs_key &k) const {
-        const uint8_t *data = static_cast<const uint8_t *>(k.key);  // 바이트 단위로 접근
+        const uint8_t *data = static_cast<const uint8_t *>(k.key);
         uint16_t length = k.length;
 
-        size_t hash = 0xcbf29ce484222325;  // FNV-1a 초기값 (64비트)
+        size_t hash = 0xcbf29ce484222325;  // FNV-1a init value (64 bits)
         const size_t fnv_prime = 0x100000001b3;
 
         for (uint16_t i = 0; i < length; ++i) {
-            hash ^= data[i];    // 바이트를 XOR 연산
-            hash *= fnv_prime;  // FNV-1a 해시 알고리즘의 주요 곱셈 단계
+            hash ^= data[i];    // Byte XOR
+            hash *= fnv_prime;  // FNV-1a Hash Algorithm
         }
 
         return hash;

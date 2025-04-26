@@ -7,15 +7,15 @@ namespace kvssd_hashmap {
 Hashmap_KVSSD::Hashmap_KVSSD() { pthread_rwlock_init(&rwl, NULL); }
 Hashmap_KVSSD::~Hashmap_KVSSD() {
     pthread_rwlock_wrlock(&rwl);
-    for (auto it = db.begin(); it != db.end();) {
-        if (it->first.key != nullptr) {
-            free(it->first.key);
+    for (auto &it : db) {
+        if (it.first.key != nullptr) {
+            free(it.first.key);
         }
-        if (it->second.value != nullptr) {
-            free(it->second.value);
+        if (it.second.value != nullptr) {
+            free(it.second.value);
         }
-        it = db.erase(it);
     }
+    db.clear();
     pthread_rwlock_unlock(&rwl);
     pthread_rwlock_destroy(&rwl);
 }
@@ -66,7 +66,7 @@ kvssd::kvs_value Hashmap_KVSSD::DeepCopyValue(const kvssd::kvs_value &orig) {
     return copy;
 }
 
-// API 함수 4가지
+// API Functions
 kvssd::kvs_result Hashmap_KVSSD::Read(const kvssd::kvs_key &key, kvssd::kvs_value &value_out) {
     kvssd::kvs_result ret = ValidateRequest(key, value_out);
     if (ret != kvssd::kvs_result::KVS_SUCCESS) {
