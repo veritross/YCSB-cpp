@@ -16,21 +16,22 @@ BIND_LEVELDB ?= 0
 BIND_ROCKSDB ?= 0
 BIND_LMDB ?= 0
 BIND_SQLITE ?= 0
+BIND_KVSSD ?= 1
 
 # Extra options
-DEBUG_BUILD ?=
+DEBUG_BUILD ?= 
 EXTRA_CXXFLAGS ?=
 EXTRA_LDFLAGS ?=
 
 # HdrHistogram for tail latency report
-BIND_HDRHISTOGRAM ?= 1
+BIND_HDRHISTOGRAM ?= 
 # Build and statically link library, submodule required
-BUILD_HDRHISTOGRAM ?= 1
+BUILD_HDRHISTOGRAM ?= 
 
 #----------------------------------------------------------
 
 ifeq ($(DEBUG_BUILD), 1)
-	CXXFLAGS += -g
+	CXXFLAGS += -g -fsanitize=address
 else
 	CXXFLAGS += -O2
 	CPPFLAGS += -DNDEBUG
@@ -59,6 +60,10 @@ endif
 ifeq ($(BIND_SQLITE), 1)
 	LDFLAGS += -lsqlite3
 	SOURCES += $(wildcard sqlite/*.cc)
+endif
+
+ifeq ($(BIND_KVSSD), 1)
+	SOURCES += $(wildcard kvssd/*.cc)
 endif
 
 CXXFLAGS += -std=c++17 -Wall -pthread $(EXTRA_CXXFLAGS) -I./
