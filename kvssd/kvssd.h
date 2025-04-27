@@ -45,8 +45,7 @@ enum class kvs_result {
     KVS_ERR_DEV_NOT_OPENED = 0x018,            // device was not opened yet
 };
 
-inline const char *kvstrerror[] =  // kvs_result을 Index, 대응되는 에러문을
-                                   // Value로 갖는 배열 = {
+inline const char *kvstrerror[] =  // kvs_result as index, Error statement as value
     {
         "Successful",                            // KVS_SUCCESS
         "Buffer space is not enough",            // KVS_ERR_BUFFER_SMALL
@@ -85,10 +84,10 @@ struct kvs_key {
 };
 
 struct kvs_value {
-    void *value;                 // value byte stream 버퍼의 시작 주소
-    uint32_t length;             // value byte stream 버퍼의 크기 (단위: byte)
-    uint32_t actual_value_size;  // device에 저장된 value의 실제 크기 (단위: byte)
-    uint32_t offset;             // [optional] device에 저장된 value의 offset (단위: byte)
+    void *value;                 // value byte stream buffer's start address
+    uint32_t length;             // value byte stream buffer size (byte)
+    uint32_t actual_value_size;  // device stored value's actual size (byte)
+    uint32_t offset;             // [optional] device stored value offset (byte)
 };
 
 class KVSSD {

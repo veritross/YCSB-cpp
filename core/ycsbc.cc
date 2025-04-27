@@ -264,7 +264,12 @@ void ParseCommandLine(int argc, const char *argv[], ycsbc::utils::Properties &pr
       }
       std::string filename(argv[argindex]);
       std::ifstream input(argv[argindex]);
-      props.Load(input);
+      try {
+        props.Load(input);
+      } catch (const std::string &message) {
+        std::cerr << message << std::endl;
+        exit(0);
+      }
       input.close();
       argindex++;
     } else if (strcmp(argv[argindex], "-p") == 0) {
