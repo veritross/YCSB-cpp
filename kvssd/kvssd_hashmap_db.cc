@@ -4,15 +4,15 @@
 
 namespace kvssd_hashmap {
 
-Hashmap_KVSSD::Hashmap_KVSSD() { pthread_rwlock_init(&rwl, NULL); }
+Hashmap_KVSSD::Hashmap_KVSSD() { pthread_rwlock_init(&rwl, nullptr); }
 Hashmap_KVSSD::~Hashmap_KVSSD() {
     pthread_rwlock_wrlock(&rwl);
-    for (auto &it : db) {
-        if (it.first.key != nullptr) {
-            free(it.first.key);
+    for (auto &[key, value] : db) {
+        if (key.key != nullptr) {
+            free(key.key);
         }
-        if (it.second.value != nullptr) {
-            free(it.second.value);
+        if (value.value != nullptr) {
+            free(value.value);
         }
     }
     db.clear();
@@ -22,29 +22,29 @@ Hashmap_KVSSD::~Hashmap_KVSSD() {
 
 kvssd::kvs_result Hashmap_KVSSD::ValidateRequest(
     const kvssd::kvs_key &key,
-    std::optional<std::reference_wrapper<const kvssd::kvs_value>> value) {
+    std::optional<std::reference_wrapper<const kvssd::kvs_value>> value) const {
     if (key.length < KVS_MIN_KEY_LENGTH || KVS_MAX_KEY_LENGTH < key.length) {
         return kvssd::kvs_result::KVS_ERR_KEY_LENGTH_INVALID;
     }
-    if (key.key == NULL) {
+    if (key.key == nullptr) {
         return kvssd::kvs_result::KVS_ERR_PARAM_INVALID;
     }
     if (value) {
         if (value->get().length < KVS_MIN_VALUE_LENGTH ||
             KVS_MAX_VALUE_LENGTH < value->get().length) {
-            return kvssd::kvs_result::KVS_ERR_KEY_LENGTH_INVALID;
+            return kvssd::kvs_result::KVS_ERR_VALUE_LENGTH_INVALID;
         }
         if (value->get().offset & (KVS_ALIGNMENT_UNIT - 1)) {
             return kvssd::kvs_result::KVS_ERR_VALUE_OFFSET_MISALIGNED;
         }
-        if (value->get().value == NULL && value->get().length) {
+        if (value->get().value == nullptr && value->get().length) {
             return kvssd::kvs_result::KVS_ERR_PARAM_INVALID;
         }
     }
     return kvssd::kvs_result::KVS_SUCCESS;
 }
 
-kvssd::kvs_key Hashmap_KVSSD::DeepCopyKey(const kvssd::kvs_key &orig) {
+kvssd::kvs_key Hashmap_KVSSD::DeepCopyKey(const kvssd::kvs_key &orig) const {
     kvssd::kvs_key copy;
     copy.length = orig.length;
     copy.key = malloc(orig.length);
@@ -54,7 +54,7 @@ kvssd::kvs_key Hashmap_KVSSD::DeepCopyKey(const kvssd::kvs_key &orig) {
     return copy;
 }
 
-kvssd::kvs_value Hashmap_KVSSD::DeepCopyValue(const kvssd::kvs_value &orig) {
+kvssd::kvs_value Hashmap_KVSSD::DeepCopyValue(const kvssd::kvs_value &orig) const {
     kvssd::kvs_value copy;
     copy.length = orig.length;
     copy.actual_value_size = orig.actual_value_size;
@@ -68,8 +68,8 @@ kvssd::kvs_value Hashmap_KVSSD::DeepCopyValue(const kvssd::kvs_value &orig) {
 
 // API Functions
 kvssd::kvs_result Hashmap_KVSSD::Read(const kvssd::kvs_key &key, kvssd::kvs_value &value_out) {
-    kvssd::kvs_result ret = ValidateRequest(key, value_out);
-    if (ret != kvssd::kvs_result::KVS_SUCCESS) {
+    if (kvssd::kvs_result ret = ValidateRequest(key, value_out);
+        ret != kvssd::kvs_result::KVS_SUCCESS) {
         return ret;
     }
     pthread_rwlock_rdlock(&rwl);
@@ -83,27 +83,26 @@ kvssd::kvs_result Hashmap_KVSSD::Read(const kvssd::kvs_key &key, kvssd::kvs_valu
 }
 
 kvssd::kvs_result Hashmap_KVSSD::Insert(const kvssd::kvs_key &key, const kvssd::kvs_value &value) {
-    kvssd::kvs_result ret = ValidateRequest(key, value);
-    if (ret != kvssd::kvs_result::KVS_SUCCESS) {
+    if (kvssd::kvs_result ret = ValidateRequest(key, value);
+        ret != kvssd::kvs_result::KVS_SUCCESS) {
         return ret;
     }
     pthread_rwlock_wrlock(&rwl);
-    auto it = db.find(key);
-    if (it != db.end()) {
+    if (auto it = db.find(key); it != db.end()) {
         pthread_rwlock_unlock(&rwl);
         return kvssd::kvs_result::KVS_ERR_KS_EXIST;
     }
     kvssd::kvs_key key_copy = DeepCopyKey(key);
     kvssd::kvs_value value_copy = DeepCopyValue(value);
 
-    db.insert({key_copy, value_copy});
+    db.try_emplace(key_copy, value_copy);
     pthread_rwlock_unlock(&rwl);
     return kvssd::kvs_result::KVS_SUCCESS;
 }
 
 kvssd::kvs_result Hashmap_KVSSD::Update(const kvssd::kvs_key &key, const kvssd::kvs_value &value) {
-    kvssd::kvs_result ret = ValidateRequest(key, value);
-    if (ret != kvssd::kvs_result::KVS_SUCCESS) {
+    if (kvssd::kvs_result ret = ValidateRequest(key, value);
+        ret != kvssd::kvs_result::KVS_SUCCESS) {
         return ret;
     }
     pthread_rwlock_wrlock(&rwl);
@@ -125,13 +124,12 @@ kvssd::kvs_result Hashmap_KVSSD::Update(const kvssd::kvs_key &key, const kvssd::
 }
 
 kvssd::kvs_result Hashmap_KVSSD::Delete(const kvssd::kvs_key &key) {
-    kvssd::kvs_result ret = ValidateRequest(key, std::nullopt);
-    if (ret != kvssd::kvs_result::KVS_SUCCESS) {
+    if (kvssd::kvs_result ret = ValidateRequest(key, std::nullopt);
+        ret != kvssd::kvs_result::KVS_SUCCESS) {
         return ret;
     }
     pthread_rwlock_wrlock(&rwl);
-    auto it = db.find(key);
-    if (it == db.end()) {
+    if (auto it = db.find(key); it == db.end()) {
         pthread_rwlock_unlock(&rwl);
         return kvssd::kvs_result::KVS_ERR_KS_NOT_EXIST;
     }
