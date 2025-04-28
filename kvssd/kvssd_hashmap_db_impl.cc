@@ -116,7 +116,7 @@ void CheckAPI(const kvssd::kvs_result ret) {
     }
 }
 
-// Wrapper Funtions
+// Wrapper Functions
 void ReadRow(kvssd::KVSSD &kvssd, const std::string &key, std::vector<ycsbc::DB::Field> &value) {
     value = {};
     std::unique_ptr<kvs_row, KvsRowDeleter> newRow = CreateRow(key, {});

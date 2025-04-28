@@ -32,7 +32,7 @@ kvssd::kvs_result Hashmap_KVSSD::ValidateRequest(
     if (value) {
         if (value->get().length < KVS_MIN_VALUE_LENGTH ||
             KVS_MAX_VALUE_LENGTH < value->get().length) {
-            return kvssd::kvs_result::KVS_ERR_KEY_LENGTH_INVALID;
+            return kvssd::kvs_result::KVS_ERR_VALUE_LENGTH_INVALID;
         }
         if (value->get().offset & (KVS_ALIGNMENT_UNIT - 1)) {
             return kvssd::kvs_result::KVS_ERR_VALUE_OFFSET_MISALIGNED;
