@@ -45,7 +45,8 @@ enum class kvs_result {
     KVS_ERR_DEV_NOT_OPENED = 0x018,            // device was not opened yet
 };
 
-inline const char *kvstrerror[] =  // kvs_result as index, Error statement as value
+constexpr std::array<std::string_view, 26> kvstrerror{
+    // kvs_result as index, Error statement as value
     {
         "Successful",                            // KVS_SUCCESS
         "Buffer space is not enough",            // KVS_ERR_BUFFER_SMALL
@@ -72,14 +73,14 @@ inline const char *kvstrerror[] =  // kvs_result as index, Error statement as va
         "Value offset is misaligned",            // KVS_ERR_VALUE_OFFSET_MISALIGNED
         "Value update is not allowed",           // KVS_ERR_VALUE_UPDATE_NOT_ALLOWED
         "Device was not opened yet"              // KVS_ERR_DEV_NOT_OPENED
-};
+    }};
 
 struct kvs_key {
     void *key;
     uint16_t length;
 
-    bool operator==(const kvs_key &other) const {
-        return length == other.length && std::memcmp(key, other.key, length) == 0;
+    friend bool operator==(const kvs_key &lhs, const kvs_key &rhs) {
+        return lhs.length == rhs.length && std::memcmp(lhs.key, rhs.key, lhs.length) == 0;
     }
 };
 
