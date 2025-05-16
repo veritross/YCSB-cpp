@@ -16,7 +16,7 @@ namespace std {
 template <>
 struct hash<kvssd::kvs_key> {
     size_t operator()(const kvssd::kvs_key &k) const {
-        const uint8_t *data = static_cast<const uint8_t *>(k.key);
+        const auto *data = static_cast<const uint8_t *>(k.key);
         uint16_t length = k.length;
 
         size_t hash = 0xcbf29ce484222325;  // FNV-1a init value (64 bits)
@@ -36,21 +36,22 @@ namespace kvssd_hashmap {
 class Hashmap_KVSSD : public kvssd::KVSSD {
    public:
     Hashmap_KVSSD();
-    ~Hashmap_KVSSD();
+    ~Hashmap_KVSSD() final;
 
-    kvssd::kvs_result Read(const kvssd::kvs_key &, kvssd::kvs_value &);
-    kvssd::kvs_result Insert(const kvssd::kvs_key &, const kvssd::kvs_value &);
-    kvssd::kvs_result Update(const kvssd::kvs_key &, const kvssd::kvs_value &);
-    kvssd::kvs_result Delete(const kvssd::kvs_key &);
+    kvssd::kvs_result Read(const kvssd::kvs_key &, kvssd::kvs_value &) final;
+    kvssd::kvs_result Insert(const kvssd::kvs_key &, const kvssd::kvs_value &) final;
+    kvssd::kvs_result Update(const kvssd::kvs_key &, const kvssd::kvs_value &) final;
+    kvssd::kvs_result Delete(const kvssd::kvs_key &) final;
 
    private:
     std::unordered_map<kvssd::kvs_key, kvssd::kvs_value> db;
     pthread_rwlock_t rwl;
 
     kvssd::kvs_result ValidateRequest(
-        const kvssd::kvs_key &, std::optional<std::reference_wrapper<const kvssd::kvs_value>>);
-    kvssd::kvs_key DeepCopyKey(const kvssd::kvs_key &);
-    kvssd::kvs_value DeepCopyValue(const kvssd::kvs_value &);
+        const kvssd::kvs_key &,
+        std::optional<std::reference_wrapper<const kvssd::kvs_value>>) const;
+    kvssd::kvs_key DeepCopyKey(const kvssd::kvs_key &) const;
+    kvssd::kvs_value DeepCopyValue(const kvssd::kvs_value &) const;
 };
 
 }  // namespace kvssd_hashmap

@@ -4,8 +4,9 @@
 #include "gtest/gtest.h"
 #include "kvssd_hashmap_db_impl.h"
 
-#define NUM_KEYS 100'000
-#define NUM_VALUES 100'000
+constexpr size_t NUM_KEYS = 100'000;
+constexpr size_t NUM_VALUES = 100'000;
+constexpr size_t NUM_THREADS = 4;
 
 namespace {
 class KvssdHashMapDbImplTest : public ::testing::Test {
@@ -16,16 +17,17 @@ class KvssdHashMapDbImplTest : public ::testing::Test {
     std::vector<ycsbc::DB::Field> output_value;
 };
 
-std::string RandomPrintStr(size_t length) {
-    std::string randomString;
-    randomString.reserve(length);
-    for (size_t i = 0; i < length; ++i) {
-        randomString += ycsbc::utils::RandomPrintChar();
+static auto MakeRandomString = [](std::mt19937 &gen, size_t len) {
+    static std::uniform_int_distribution charDist(32, 126);  // printable ASCII
+    std::string s;
+    s.reserve(len);
+    for (size_t i = 0; i < len; ++i) {
+        s.push_back(static_cast<char>(charDist(gen)));
     }
-    return randomString;
-}
+    return s;
+};
 
-std::vector<std::string> key = [] {
+std::vector<std::string> const key = [] {
     std::vector<std::string> keys(NUM_KEYS);
     for (size_t i = 0; i < NUM_KEYS; i++) {
         keys[i] = "key" + std::to_string(i);
@@ -33,14 +35,17 @@ std::vector<std::string> key = [] {
     return keys;
 }();
 
-std::vector<std::vector<ycsbc::DB::Field>> value = [] {
-    srand(static_cast<unsigned>(time(0)));
+std::vector<std::vector<ycsbc::DB::Field>> const value = [] {
+    std::random_device rd;
+    std::mt19937 gen(rd());
     std::vector<std::vector<ycsbc::DB::Field>> values(NUM_VALUES);
     for (size_t i = 0; i < NUM_VALUES; i++) {
-        values[i] = {
-            {"field" + std::to_string(i) + "_1", "value" + std::to_string(i) + RandomPrintStr(32)},
-            {"field" + std::to_string(i) + "_2", "value" + std::to_string(i) + RandomPrintStr(32)},
-            {"field" + std::to_string(i) + "_3", "value" + std::to_string(i) + RandomPrintStr(32)}};
+        values[i] = {{"field" + std::to_string(i) + "_1",
+                      "value" + std::to_string(i) + MakeRandomString(gen, 32)},
+                     {"field" + std::to_string(i) + "_2",
+                      "value" + std::to_string(i) + MakeRandomString(gen, 32)},
+                     {"field" + std::to_string(i) + "_3",
+                      "value" + std::to_string(i) + MakeRandomString(gen, 32)}};
     }
     return values;
 }();
@@ -69,7 +74,7 @@ struct ThreadArgs {
 };
 
 void *ParallelInsertUpdateRead(void *arg) {
-    ThreadArgs *args = static_cast<ThreadArgs *>(arg);
+    auto *args = static_cast<ThreadArgs *>(arg);
     auto &kv_ref = *(args->kv);
     auto &ks = *(args->keys);
     auto &vals = *(args->values);
@@ -78,21 +83,21 @@ void *ParallelInsertUpdateRead(void *arg) {
     try {
         // Insert
         for (size_t i = args->start_idx; i < args->end_idx; i++) {
-            kvssd_hashmap::InsertRow(kv_ref, ks[i], vals[i]);
+            kvssd_hashmap::InsertRow(*kv_ref, ks[i], vals[i]);
         }
 
         // Update
         size_t range = args->end_idx - args->start_idx;
         for (size_t i = args->start_idx; i < args->end_idx; i++) {
             size_t update_idx = args->start_idx + ((i - args->start_idx + 100) % range);
-            kvssd_hashmap::UpdateRow(kv_ref, ks[i], vals[update_idx]);
+            kvssd_hashmap::UpdateRow(*kv_ref, ks[i], vals[update_idx]);
         }
 
         // Read & Check
         std::vector<ycsbc::DB::Field> output_val;
         for (size_t i = args->start_idx; i < args->end_idx; i++) {
             size_t check_idx = args->start_idx + ((i - args->start_idx + 100) % range);
-            kvssd_hashmap::ReadRow(kv_ref, ks[i], output_val);
+            kvssd_hashmap::ReadRow(*kv_ref, ks[i], output_val);
 
             if (FieldVectorCmp(output_val, vals[check_idx])) {
                 args->success = false;
@@ -116,31 +121,31 @@ void *ParallelInsertUpdateRead(void *arg) {
 
 TEST_F(KvssdHashMapDbImplTest, ReadSmall) {
     for (size_t i = 0; i < 10; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
+        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(*kvssd, key[i], value[i]));
     }
     for (size_t i = 0; i < 10; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::ReadRow(kvssd, key[i], output_value));
+        EXPECT_NO_THROW(kvssd_hashmap::ReadRow(*kvssd, key[i], output_value));
         EXPECT_FALSE(FieldVectorCmp(value[i], output_value));
     }
 }
 
 TEST_F(KvssdHashMapDbImplTest, ReadLarge) {
     for (size_t i = 0; i < NUM_KEYS; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
+        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(*kvssd, key[i], value[i]));
     }
     for (size_t i = 0; i < NUM_KEYS; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::ReadRow(kvssd, key[i], output_value));
+        EXPECT_NO_THROW(kvssd_hashmap::ReadRow(*kvssd, key[i], output_value));
         EXPECT_FALSE(FieldVectorCmp(value[i], output_value));
     }
 }
 
 TEST_F(KvssdHashMapDbImplTest, Reinsertion) {
-    EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[0], value[0]));
-    EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[1], value[1]));
+    EXPECT_NO_THROW(kvssd_hashmap::InsertRow(*kvssd, key[0], value[0]));
+    EXPECT_NO_THROW(kvssd_hashmap::InsertRow(*kvssd, key[1], value[1]));
     EXPECT_THROW(
         {
             try {
-                kvssd_hashmap::InsertRow(kvssd, key[0], value[2]);
+                kvssd_hashmap::InsertRow(*kvssd, key[0], value[2]);
             } catch (const ycsbc::utils::Exception &e) {
                 EXPECT_STREQ("Key space is already created", e.what());
                 throw;
@@ -150,7 +155,7 @@ TEST_F(KvssdHashMapDbImplTest, Reinsertion) {
     EXPECT_THROW(
         {
             try {
-                kvssd_hashmap::InsertRow(kvssd, key[1], value[3]);
+                kvssd_hashmap::InsertRow(*kvssd, key[1], value[3]);
             } catch (const ycsbc::utils::Exception &e) {
                 EXPECT_STREQ("Key space is already created", e.what());
                 throw;
@@ -161,38 +166,38 @@ TEST_F(KvssdHashMapDbImplTest, Reinsertion) {
 
 TEST_F(KvssdHashMapDbImplTest, UpdateSmall) {
     for (size_t i = 0; i < 10; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
+        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(*kvssd, key[i], value[i]));
     }
     for (size_t i = 0; i < 10; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::UpdateRow(kvssd, key[i], value[i + 10]));
+        EXPECT_NO_THROW(kvssd_hashmap::UpdateRow(*kvssd, key[i], value[i + 10]));
     }
     for (size_t i = 0; i < 10; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::ReadRow(kvssd, key[i], output_value));
+        EXPECT_NO_THROW(kvssd_hashmap::ReadRow(*kvssd, key[i], output_value));
         EXPECT_FALSE(FieldVectorCmp(value[i + 10], output_value));
     }
 }
 
 TEST_F(KvssdHashMapDbImplTest, UpdateLarge) {
     for (size_t i = 0; i < NUM_KEYS; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
+        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(*kvssd, key[i], value[i]));
     }
     for (size_t i = 0; i < NUM_KEYS; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::UpdateRow(kvssd, key[i], value[(i + 500) % NUM_KEYS]));
+        EXPECT_NO_THROW(kvssd_hashmap::UpdateRow(*kvssd, key[i], value[(i + 500) % NUM_KEYS]));
     }
     for (size_t i = 0; i < NUM_KEYS; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::ReadRow(kvssd, key[i], output_value));
+        EXPECT_NO_THROW(kvssd_hashmap::ReadRow(*kvssd, key[i], output_value));
         EXPECT_FALSE(FieldVectorCmp(value[(i + 500) % NUM_KEYS], output_value));
     }
 }
 
 TEST_F(KvssdHashMapDbImplTest, UpdateAccessInvalidKey) {
     for (size_t i = 0; i < 10; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
+        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(*kvssd, key[i], value[i]));
     }
     EXPECT_THROW(
         {
             try {
-                kvssd_hashmap::UpdateRow(kvssd, key[99], value[99]);
+                kvssd_hashmap::UpdateRow(*kvssd, key[99], value[99]);
             } catch (const ycsbc::utils::Exception &e) {
                 EXPECT_STREQ("Key space does not exist", e.what());
                 throw;
@@ -203,34 +208,34 @@ TEST_F(KvssdHashMapDbImplTest, UpdateAccessInvalidKey) {
 
 TEST_F(KvssdHashMapDbImplTest, DeleteSmall) {
     for (size_t i = 0; i < 10; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
+        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(*kvssd, key[i], value[i]));
     }
     for (size_t i = 0; i < 10; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::ReadRow(kvssd, key[i], output_value));
+        EXPECT_NO_THROW(kvssd_hashmap::ReadRow(*kvssd, key[i], output_value));
         EXPECT_FALSE(FieldVectorCmp(value[i], output_value));
-        EXPECT_NO_THROW(kvssd_hashmap::DeleteRow(kvssd, key[i]));
+        EXPECT_NO_THROW(kvssd_hashmap::DeleteRow(*kvssd, key[i]));
     }
 }
 
 TEST_F(KvssdHashMapDbImplTest, DeleteLarge) {
     for (size_t i = 0; i < NUM_KEYS; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
+        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(*kvssd, key[i], value[i]));
     }
     for (size_t i = 0; i < NUM_KEYS; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::ReadRow(kvssd, key[i], output_value));
+        EXPECT_NO_THROW(kvssd_hashmap::ReadRow(*kvssd, key[i], output_value));
         EXPECT_FALSE(FieldVectorCmp(value[i], output_value));
-        EXPECT_NO_THROW(kvssd_hashmap::DeleteRow(kvssd, key[i]));
+        EXPECT_NO_THROW(kvssd_hashmap::DeleteRow(*kvssd, key[i]));
     }
 }
 
 TEST_F(KvssdHashMapDbImplTest, DeleteAccessInvalidKey) {
     for (size_t i = 0; i < 10; i++) {
-        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(kvssd, key[i], value[i]));
+        EXPECT_NO_THROW(kvssd_hashmap::InsertRow(*kvssd, key[i], value[i]));
     }
     EXPECT_THROW(
         {
             try {
-                kvssd_hashmap::DeleteRow(kvssd, key[99]);
+                kvssd_hashmap::DeleteRow(*kvssd, key[99]);
             } catch (const ycsbc::utils::Exception &e) {
                 EXPECT_STREQ("Key space does not exist", e.what());
                 throw;
@@ -240,9 +245,8 @@ TEST_F(KvssdHashMapDbImplTest, DeleteAccessInvalidKey) {
 }
 
 TEST_F(KvssdHashMapDbImplTest, ParallelOperations) {
-    const size_t NUM_THREADS = 4;
-    pthread_t threads[NUM_THREADS];
-    ThreadArgs thread_args[NUM_THREADS];
+    std::array<pthread_t, NUM_THREADS> threads;
+    std::array<ThreadArgs, NUM_THREADS> thread_args;
 
     size_t range_per_thread = NUM_KEYS / NUM_THREADS;
 

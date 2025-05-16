@@ -38,7 +38,7 @@ struct KvsRowDeleter {
 void SerializeRow(const std::vector<ycsbc::DB::Field> &values, std::string *data);
 void DeserializeRow(std::vector<ycsbc::DB::Field> *values, const char *data_ptr, size_t data_len);
 
-std::unique_ptr<kvs_row, KvsRowDeleter> CreateRow(const std::string &key_in,
+std::unique_ptr<kvs_row, KvsRowDeleter> CreateRow(std::string_view key_in,
                                                   const std::vector<ycsbc::DB::Field> &value_in);
 
 void PrintRow(const kvssd::kvs_value &value);
@@ -47,13 +47,12 @@ void PrintFieldVector(const std::vector<ycsbc::DB::Field> &value);
 void CheckAPI(const kvssd::kvs_result ret);
 
 // Wrapper Functions
-void ReadRow(const std::unique_ptr<kvssd::KVSSD> &kvssd, const std::string &key,
-             std::vector<ycsbc::DB::Field> &value);
-void InsertRow(const std::unique_ptr<kvssd::KVSSD> &kvssd, const std::string &key,
+void ReadRow(kvssd::KVSSD &kvssd, const std::string &key, std::vector<ycsbc::DB::Field> &value);
+void InsertRow(kvssd::KVSSD &kvssd, const std::string &key,
                const std::vector<ycsbc::DB::Field> &value);
-void UpdateRow(const std::unique_ptr<kvssd::KVSSD> &kvssd, const std::string &key,
+void UpdateRow(kvssd::KVSSD &kvssd, const std::string &key,
                const std::vector<ycsbc::DB::Field> &value);
-void DeleteRow(const std::unique_ptr<kvssd::KVSSD> &kvssd, const std::string &key);
+void DeleteRow(kvssd::KVSSD &kvssd, const std::string &key);
 
 }  // namespace kvssd_hashmap
 
